@@ -1,5 +1,6 @@
 <template>
-  <div class="dashboard-screen">
+  <div ref="screenShellRef" class="dashboard-screen">
+    <div class="screen-canvas" :style="{ transform: `scale(${screenScale})` }">
     <section class="screen-header">
       <div class="header-weather">
         <span>{{ weather.city }}</span>
@@ -15,7 +16,7 @@
       </div>
     </section>
 
-    <section class="screen-grid">
+      <section class="screen-grid">
       <article class="panel">
         <div class="panel-title">产销趋势</div>
         <div ref="trendChartRef" class="chart chart--small"></div>
@@ -120,7 +121,7 @@
         <div class="panel-title">设备信息</div>
         <div ref="deviceInfoPieRef" class="chart chart--small"></div>
       </article>
-    </section>
+      </section>
 
     <el-dialog v-model="showDeviceLedger" title="台账树" width="88%" class="blue-dialog">
       <div class="ledger-layout">
@@ -201,12 +202,13 @@
         </section>
       </div>
     </el-dialog>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { echarts } from '../../utils/echarts'
+import { INDUSTRIAL_CHART_COLORS, buildIndustrialLineStyle, echarts } from '../../utils/echarts'
 
 type LedgerNode = {
   id: string
@@ -380,6 +382,17 @@ let trendChart: any = null
 let stockChart: any = null
 let qualityChart: any = null
 let deviceInfoPie: any = null
+const screenShellRef = ref<HTMLElement | null>(null)
+const DESIGN_WIDTH = 1920
+const DESIGN_HEIGHT = 1080
+const screenScale = ref(1)
+
+const syncScreenScale = () => {
+  if (!screenShellRef.value) return
+  const { width, height } = screenShellRef.value.getBoundingClientRect()
+  const scale = Math.min(width / DESIGN_WIDTH, height / DESIGN_HEIGHT)
+  screenScale.value = Number.isFinite(scale) && scale > 0 ? Math.max(scale, 0.56) : 1
+}
 
 const renderCharts = () => {
   if (trendChartRef.value) {
@@ -390,22 +403,20 @@ const renderCharts = () => {
       xAxis: {
         type: 'category',
         data: ['01-06', '01-07', '01-08', '01-09', '01-10', '01-11', '01-12'],
-        axisLabel: { color: '#dbe7ff' },
+        axisLabel: { color: INDUSTRIAL_CHART_COLORS.axis },
         axisLine: { lineStyle: { color: '#37516d' } },
       },
       yAxis: {
         type: 'value',
-        axisLabel: { color: '#dbe7ff' },
-        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.08)' } },
+        axisLabel: { color: INDUSTRIAL_CHART_COLORS.axis },
+        splitLine: { lineStyle: { color: INDUSTRIAL_CHART_COLORS.grid } },
       },
       series: [
         {
           name: '生产',
           type: 'line',
-          smooth: true,
           data: [29907, 30361, 29061, 21478, 26422, 27764, 23174],
-          itemStyle: { color: '#f5ff3b' },
-          lineStyle: { width: 3, color: '#f5ff3b' },
+          ...buildIndustrialLineStyle(INDUSTRIAL_CHART_COLORS.primary),
         },
       ],
     })
@@ -418,16 +429,23 @@ const renderCharts = () => {
       xAxis: {
         type: 'category',
         data: ['1#原煤仓', '1#产品仓', '3#产品仓', '2#精煤仓', '4#产品仓', '5#原煤仓'],
-        axisLabel: { color: '#dbe7ff' },
+        axisLabel: { color: INDUSTRIAL_CHART_COLORS.axis },
         axisLine: { lineStyle: { color: '#37516d' } },
       },
       yAxis: {
         type: 'value',
-        axisLabel: { color: '#dbe7ff' },
-        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.08)' } },
+        axisLabel: { color: INDUSTRIAL_CHART_COLORS.axis },
+        splitLine: { lineStyle: { color: INDUSTRIAL_CHART_COLORS.grid } },
         max: 100,
       },
-      series: [{ type: 'bar', data: [0, 0, 0, 0, 0, 0], itemStyle: { color: '#f5c44f' }, barWidth: 28 }],
+      series: [
+        {
+          type: 'bar',
+          data: [0, 0, 0, 0, 0, 0],
+          itemStyle: { color: INDUSTRIAL_CHART_COLORS.warning },
+          barWidth: 28,
+        },
+      ],
     })
   }
 
@@ -435,22 +453,32 @@ const renderCharts = () => {
     qualityChart ??= echarts.init(qualityChartRef.value)
     qualityChart.setOption({
       tooltip: { trigger: 'axis' },
-      legend: { top: 0, textStyle: { color: '#dbe7ff' } },
+      legend: { top: 0, textStyle: { color: INDUSTRIAL_CHART_COLORS.axis } },
       grid: { top: 30, left: 50, right: 20, bottom: 40 },
       xAxis: {
         type: 'category',
         data: ['01-06', '01-07', '01-08', '01-09', '01-10', '01-11', '01-12'],
-        axisLabel: { color: '#dbe7ff' },
+        axisLabel: { color: INDUSTRIAL_CHART_COLORS.axis },
         axisLine: { lineStyle: { color: '#37516d' } },
       },
       yAxis: {
         type: 'value',
-        axisLabel: { color: '#dbe7ff' },
-        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.08)' } },
+        axisLabel: { color: INDUSTRIAL_CHART_COLORS.axis },
+        splitLine: { lineStyle: { color: INDUSTRIAL_CHART_COLORS.grid } },
       },
       series: [
-        { name: '灰分', type: 'line', data: [17.5, 17.2, 17.4, 17.8, 17.6, 17.3, 17.1], itemStyle: { color: '#5fe0ff' } },
-        { name: '硫分', type: 'line', data: [1.1, 1.05, 1.13, 1.09, 1.14, 1.12, 1.1], itemStyle: { color: '#6cff85' } },
+        {
+          name: '灰分',
+          type: 'line',
+          data: [17.5, 17.2, 17.4, 17.8, 17.6, 17.3, 17.1],
+          ...buildIndustrialLineStyle(INDUSTRIAL_CHART_COLORS.primary),
+        },
+        {
+          name: '硫分',
+          type: 'line',
+          data: [1.1, 1.05, 1.13, 1.09, 1.14, 1.12, 1.1],
+          ...buildIndustrialLineStyle(INDUSTRIAL_CHART_COLORS.secondary),
+        },
       ],
     })
   }
@@ -458,17 +486,17 @@ const renderCharts = () => {
   if (deviceInfoPieRef.value) {
     deviceInfoPie ??= echarts.init(deviceInfoPieRef.value)
     deviceInfoPie.setOption({
-      legend: { right: 0, top: 'middle', orient: 'vertical', textStyle: { color: '#dbe7ff' } },
+      legend: { right: 0, top: 'middle', orient: 'vertical', textStyle: { color: INDUSTRIAL_CHART_COLORS.axis } },
       series: [
         {
           type: 'pie',
           radius: ['52%', '74%'],
           center: ['35%', '52%'],
           data: [
-            { value: 209, name: '在用', itemStyle: { color: '#6b82d8' } },
-            { value: 0, name: '备用', itemStyle: { color: '#9bd36c' } },
-            { value: 0, name: '报废', itemStyle: { color: '#f7cd65' } },
-            { value: 0, name: '维修', itemStyle: { color: '#f06969' } },
+            { value: 209, name: '在用', itemStyle: { color: INDUSTRIAL_CHART_COLORS.primary } },
+            { value: 0, name: '备用', itemStyle: { color: INDUSTRIAL_CHART_COLORS.secondary } },
+            { value: 0, name: '报废', itemStyle: { color: INDUSTRIAL_CHART_COLORS.warning } },
+            { value: 0, name: '维修', itemStyle: { color: INDUSTRIAL_CHART_COLORS.critical } },
           ],
           label: { color: '#eaf6ff' },
         },
@@ -478,11 +506,14 @@ const renderCharts = () => {
 }
 
 onMounted(() => {
+  syncScreenScale()
   renderCharts()
+  window.addEventListener('resize', syncScreenScale)
   window.addEventListener('resize', renderCharts)
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', syncScreenScale)
   window.removeEventListener('resize', renderCharts)
   trendChart?.dispose()
   stockChart?.dispose()
@@ -493,18 +524,26 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .dashboard-screen {
-  min-height: 100vh;
-  padding: 24px clamp(12px, 2vw, 24px) 32px;
+  height: calc(100vh - 80px);
+  overflow: hidden;
+  padding: 8px;
   background:
     radial-gradient(circle at center, rgba(38, 166, 255, 0.14), transparent 28%),
     #040914;
   color: #eaf6ff;
 }
 
+.screen-canvas {
+  width: 1920px;
+  height: 1080px;
+  margin: 0 auto;
+  transform-origin: top center;
+}
+
 .screen-header,
 .screen-grid {
-  width: min(100%, 1920px);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
 }
 
 .screen-header {

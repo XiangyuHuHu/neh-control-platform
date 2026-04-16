@@ -1,0 +1,29 @@
+# Environment files
+.env
+.env.*
+!.env.docker.example
+
+# Dependencies
+**/node_modules/
+
+# Frontend build outputs
+web/dist/
+web-admin/dist/
+web-mobile/dist/
+
+# Backend build outputs
+server/target/
+
+# IDE / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local temporary artifacts
+.tmp/
+tmp_feature_list.et
+tmp_feature_list_dump.txt
+apache-maven-3.9.9/
+apache-maven-3.9.9-bin.zip
+~$*.doc

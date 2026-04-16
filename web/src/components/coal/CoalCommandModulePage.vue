@@ -97,7 +97,10 @@ const notify = (message: string) => ElMessage.success(message)
   min-height: 100%;
   width: min(100%, 1680px);
   margin: 0 auto;
-  padding: 20px 20px 28px;
+  --cc-gap: var(--control-gap, 16px);
+  --cc-padding: var(--control-padding, 16px);
+  --cc-radius: var(--control-radius, 16px);
+  padding: 16px;
   background:
     radial-gradient(circle at top right, rgba(55, 174, 255, 0.16), transparent 22%),
     radial-gradient(circle at left top, rgba(26, 241, 180, 0.08), transparent 20%),
@@ -109,7 +112,7 @@ const notify = (message: string) => ElMessage.success(message)
 .metric-card,
 .panel {
   border: 1px solid rgba(106, 188, 255, 0.14);
-  border-radius: 24px;
+  border-radius: calc(var(--cc-radius) + 8px);
   background: rgba(8, 19, 30, 0.9);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.24);
 }
@@ -117,9 +120,9 @@ const notify = (message: string) => ElMessage.success(message)
 .hero-shell {
   display: flex;
   justify-content: space-between;
-  gap: 24px;
+  gap: var(--cc-gap);
   align-items: center;
-  padding: 24px 26px;
+  padding: calc(var(--cc-padding) + 4px);
 }
 
 .eyebrow {
@@ -178,12 +181,12 @@ const notify = (message: string) => ElMessage.success(message)
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-  margin-top: 18px;
+  gap: var(--cc-gap);
+  margin-top: var(--cc-gap);
 }
 
 .metric-card {
-  padding: 22px;
+  padding: calc(var(--cc-padding) + 4px);
 }
 
 .metric-card span,
@@ -207,12 +210,12 @@ const notify = (message: string) => ElMessage.success(message)
 .main-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  margin-top: 18px;
+  gap: var(--cc-gap);
+  margin-top: var(--cc-gap);
 }
 
 .panel {
-  padding: 24px;
+  padding: calc(var(--cc-padding) + 4px);
 }
 
 .panel-head {
@@ -220,7 +223,7 @@ const notify = (message: string) => ElMessage.success(message)
   justify-content: space-between;
   gap: 16px;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: var(--cc-gap);
 }
 
 .chip-list {
@@ -261,7 +264,7 @@ const notify = (message: string) => ElMessage.success(message)
 }
 
 .table-panel {
-  margin-top: 18px;
+  margin-top: var(--cc-gap);
 }
 
 .text-btn {

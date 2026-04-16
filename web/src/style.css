@@ -25,6 +25,12 @@
   --amber: #f6b94c;
   --red: #ff7878;
   --desktop-shell-width: 1760px;
+  --control-gap: 16px;
+  --control-padding: 16px;
+  --control-radius: 16px;
+  --status-running: #00d8a6;
+  --status-idle: #ffb547;
+  --status-stopped: #ff6b6b;
 }
 
 * {
