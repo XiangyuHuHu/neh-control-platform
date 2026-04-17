@@ -77,10 +77,10 @@ const rows = ref<ProductionOperationDto[]>([])
 let chart: any = null
 
 const fallbackRows: ProductionOperationDto[] = [
-  { statDate: '2026-04-14', shift: '白班', rawCoal: 2860, cleanCoal: 2180, middling: 415, gangue: 174, runHours: 14.5, completionRate: 92.4, remark: '洗选系统稳定' },
-  { statDate: '2026-04-13', shift: '夜班', rawCoal: 2740, cleanCoal: 2105, middling: 398, gangue: 166, runHours: 14.2, completionRate: 91.8, remark: '主洗车间短停 20 分钟' },
-  { statDate: '2026-04-13', shift: '白班', rawCoal: 2960, cleanCoal: 2220, middling: 445, gangue: 178, runHours: 14.8, completionRate: 93.1, remark: '原煤入选稳定' },
-  { statDate: '2026-04-12', shift: '夜班', rawCoal: 2680, cleanCoal: 2050, middling: 392, gangue: 160, runHours: 13.9, completionRate: 90.7, remark: '精煤灰分略高' },
+  { statDate: '2026-04-16', shift: '白班', rawCoal: 26463, cleanCoal: 10390, middling: 8371, gangue: 3702, runHours: 15.6, completionRate: 70.9, remark: '停车检修，产量受限' },
+  { statDate: '2026-04-15', shift: '夜班', rawCoal: 25840, cleanCoal: 10145, middling: 8126, gangue: 3569, runHours: 15.2, completionRate: 69.8, remark: '系统运行平稳，局部负荷偏低' },
+  { statDate: '2026-04-15', shift: '白班', rawCoal: 27120, cleanCoal: 10630, middling: 8512, gangue: 3978, runHours: 16.0, completionRate: 72.4, remark: '入洗组织正常，回收率稳定' },
+  { statDate: '2026-04-14', shift: '夜班', rawCoal: 24980, cleanCoal: 9820, middling: 7894, gangue: 3266, runHours: 14.7, completionRate: 68.5, remark: '设备巡检期间短时降负荷' },
 ]
 
 const stats = computed(() => {

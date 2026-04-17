@@ -170,7 +170,7 @@ import CoalQuickBar from '../../components/coal/CoalQuickBar.vue'
 import { echarts } from '../../utils/echarts'
 import { exportRowsToCsv, printRowsAsTable } from '../../utils/report-export'
 import { listProcessFlow, type ProcessFlowDto } from '../../api/coal-business'
-import { useIotStore } from '../../stores/iot'
+import { useIotHub } from '../../composables/useIotHub'
 
 const filterStatus = ref('')
 const rows = ref<ProcessFlowDto[]>([])
@@ -187,7 +187,7 @@ const adjustmentForm = ref({
 const chartEl = ref<HTMLElement | null>(null)
 let chart: any = null
 let refreshTimer = 0
-const iotStore = useIotStore()
+const iotHub = useIotHub()
 const flowScale = ref(1)
 const flowOffsetX = ref(0)
 const flowOffsetY = ref(0)
@@ -237,7 +237,7 @@ const fallbackLoadMap = computed(() => {
 
 const processNodes = computed(() =>
   processNodeConfigs.map((node) => {
-    const live = iotStore.getTagValue(node.tagCode)
+    const live = iotHub.getTagValue(node.tagCode)
     const numeric = typeof live?.value === 'number' ? live.value : fallbackLoadMap.value[node.key]
     const rounded = Number.isFinite(numeric) ? Number(numeric).toFixed(0) : '--'
     let state: 'running' | 'attention' | 'alarm' = 'running'
@@ -444,13 +444,12 @@ const createReviewTask = () => {
 
 const handleResize = () => chart?.resize()
 onMounted(async () => {
-  iotStore.subscribe({ pageKey: 'process-flow', intervalMs: 5000 })
+  iotHub.subscribe({ pageKey: 'process-flow', intervalMs: 5000 })
   await loadRows()
   refreshTimer = window.setInterval(() => loadRows(), 30000)
   window.addEventListener('resize', handleResize)
 })
 onUnmounted(() => {
-  iotStore.unsubscribe('process-flow')
   clearInterval(refreshTimer)
   chart?.dispose()
   window.removeEventListener('resize', handleResize)

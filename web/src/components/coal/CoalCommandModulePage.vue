@@ -22,6 +22,7 @@
         <span>{{ item.label }}</span>
         <strong>{{ item.value }}<em v-if="item.unit">{{ item.unit }}</em></strong>
         <small>{{ item.note }}</small>
+        <p v-if="item.trend" class="metric-trend">趋势 {{ metricTrendText(item.trend) }}</p>
         <p v-if="item.refreshRate || config.refreshRate" class="metric-refresh">刷新频率 {{ item.refreshRate || config.refreshRate }}s</p>
       </article>
     </section>
@@ -97,12 +98,21 @@ defineProps<{
 
 const notify = (message: string) => ElMessage.success(message)
 
-const extractNumber = (value: string) => {
+const extractNumber = (value: string | number) => {
+  if (typeof value === 'number') return value
   const matched = value.match(/-?\d+(\.\d+)?/)
   return matched ? Number(matched[0]) : Number.NaN
 }
 
+const metricTrendText = (trend: NonNullable<ModuleMetric['trend']>) => {
+  if (trend === 'up') return '上升'
+  if (trend === 'down') return '下降'
+  return '持平'
+}
+
 const metricLevelClass = (metric: ModuleMetric) => {
+  if (metric.status === 'danger') return 'metric-card--critical'
+  if (metric.status === 'warning') return 'metric-card--warning'
   if (!metric.threshold) return ''
   const numeric = extractNumber(metric.value)
   if (Number.isNaN(numeric)) return ''
@@ -244,6 +254,12 @@ const metricLevelClass = (metric: ModuleMetric) => {
   margin: 8px 0 0;
   font-size: 12px;
   color: rgba(163, 196, 225, 0.88);
+}
+
+.metric-trend {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: rgba(154, 208, 255, 0.92);
 }
 
 .metric-card--warning {

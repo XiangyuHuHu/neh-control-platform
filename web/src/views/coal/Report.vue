@@ -128,19 +128,19 @@ const reportStates: Record<ReportKey, ReportState> = {
       { prop: 'remark', label: '备注' },
     ],
     tableData: [
-      { date: '04-09', plan: 1200, actual: 1245, completion: 100, remark: '达标' },
-      { date: '04-10', plan: 1200, actual: 1180, completion: 98, remark: '正常' },
-      { date: '04-11', plan: 1200, actual: 1210, completion: 100, remark: '正常' },
+      { date: '04-14', plan: 12603, actual: 24980, completion: 68.5, remark: '设备巡检期间短时降负荷' },
+      { date: '04-15', plan: 12603, actual: 26480, completion: 71.1, remark: '生产平稳，回收率正常' },
+      { date: '04-16', plan: 12603, actual: 26463, completion: 70.9, remark: '停车检修，产量受限' },
     ],
     leftOption: {
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: ['04-09', '04-10', '04-11'], ...chartTheme },
+      xAxis: { type: 'category', data: ['04-14', '04-15', '04-16'], ...chartTheme },
       yAxis: { type: 'value', ...chartTheme },
-      series: [{ type: 'line', smooth: true, data: [1245, 1180, 1210], itemStyle: { color: '#57d8ff' } }],
+      series: [{ type: 'line', smooth: true, data: [24980, 26480, 26463], itemStyle: { color: '#57d8ff' } }],
     },
     rightOption: {
       tooltip: { trigger: 'item' },
-      series: [{ type: 'pie', radius: ['40%', '72%'], data: [{ value: 48, name: '精煤' }, { value: 32, name: '中煤' }, { value: 20, name: '煤泥' }] }],
+      series: [{ type: 'pie', radius: ['40%', '72%'], data: [{ value: 39, name: '精煤' }, { value: 31, name: '中煤' }, { value: 30, name: '矸石及其他' }] }],
     },
   },
   quality: {
@@ -154,25 +154,25 @@ const reportStates: Record<ReportKey, ReportState> = {
       { prop: 'result', label: '结论', type: 'tag' },
     ],
     tableData: [
-      { sample: '精煤 A', ash: '9.24%', moisture: '7.1%', result: '合格' },
-      { sample: '精煤 B', ash: '9.42%', moisture: '7.3%', result: '合格' },
-      { sample: '中煤 C', ash: '13.15%', moisture: '8.2%', result: '关注' },
+      { sample: '湿混', ash: '39.6%', moisture: '36.7%', result: '合格' },
+      { sample: '干后煤泥', ash: '40.57%', moisture: '27%', result: '合格' },
+      { sample: '混配样', ash: '40.1%', moisture: '30.2%', result: '关注' },
     ],
     leftOption: {
       tooltip: { trigger: 'axis' },
       legend: { textStyle: { color: '#dbe7ff' } },
-      xAxis: { type: 'category', data: ['A', 'B', 'C'], ...chartTheme },
+      xAxis: { type: 'category', data: ['湿混', '干后煤泥', '混配样'], ...chartTheme },
       yAxis: { type: 'value', ...chartTheme },
       series: [
-        { name: '灰分', type: 'line', data: [9.24, 9.42, 13.15], itemStyle: { color: '#57d8ff' } },
-        { name: '水分', type: 'line', data: [7.1, 7.3, 8.2], itemStyle: { color: '#25d39c' } },
+        { name: '灰分', type: 'line', data: [39.6, 40.57, 40.1], itemStyle: { color: '#57d8ff' } },
+        { name: '水分', type: 'line', data: [36.7, 27, 30.2], itemStyle: { color: '#25d39c' } },
       ],
     },
     rightOption: {
       tooltip: { trigger: 'axis' },
       xAxis: { type: 'category', data: ['合格', '关注', '异常'], ...chartTheme },
       yAxis: { type: 'value', ...chartTheme },
-      series: [{ type: 'bar', data: [18, 3, 1], itemStyle: { color: '#57d8ff' }, barWidth: 36 }],
+      series: [{ type: 'bar', data: [2, 1, 0], itemStyle: { color: '#57d8ff' }, barWidth: 36 }],
     },
   },
   energy: {

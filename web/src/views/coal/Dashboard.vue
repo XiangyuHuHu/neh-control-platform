@@ -89,19 +89,19 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { echarts } from '../../utils/echarts'
-import { useIotStore } from '../../stores/iot'
+import { useIotHub } from '../../composables/useIotHub'
 
 const router = useRouter()
-const iotStore = useIotStore()
+const iotHub = useIotHub()
 
 const getRealtimeValue = (tagCode: string, fallback: number, digits = 1) => {
-  const live = iotStore.getTagValue(tagCode)
+  const live = iotHub.getTagValue(tagCode)
   if (!live || typeof live.value !== 'number') return fallback.toFixed(digits)
   return live.value.toFixed(digits)
 }
 
 const abnormalCount = computed(
-  () => Object.values(iotStore.realtimeMap).filter((item) => item.quality !== 'GOOD').length,
+  () => Object.values(iotHub.realtimeMap.value).filter((item) => item.quality !== 'GOOD').length,
 )
 
 const kpis = computed(() => [
@@ -134,9 +134,9 @@ const dispatchRows = [
 ]
 
 const envRows = computed(() => {
-  const temp = iotStore.getTagValue('coal.env.raw.temperature')
-  const humidity = iotStore.getTagValue('coal.env.product.humidity')
-  const dust = iotStore.getTagValue('coal.env.product.dust')
+  const temp = iotHub.getTagValue('coal.env.raw.temperature')
+  const humidity = iotHub.getTagValue('coal.env.product.humidity')
+  const dust = iotHub.getTagValue('coal.env.product.dust')
   return [
     { name: '1号原煤仓', type: '温度', value: `${temp?.value?.toFixed?.(1) || '26.4'}°C`, status: temp?.quality === 'GOOD' ? '正常' : '关注' },
     { name: '1号产品仓', type: '湿度', value: `${humidity?.value?.toFixed?.(0) || '63'}%`, status: humidity?.quality === 'GOOD' ? '正常' : '关注' },
@@ -227,13 +227,12 @@ const renderCharts = () => {
 }
 
 onMounted(() => {
-  iotStore.subscribe({ pageKey: 'coal-dashboard', intervalMs: 5000 })
+  iotHub.subscribe({ pageKey: 'coal-dashboard', intervalMs: 5000 })
   renderCharts()
   window.addEventListener('resize', renderCharts)
 })
 
 onBeforeUnmount(() => {
-  iotStore.unsubscribe('coal-dashboard')
   window.removeEventListener('resize', renderCharts)
   trendChart?.dispose()
   stockChart?.dispose()

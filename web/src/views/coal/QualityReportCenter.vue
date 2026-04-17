@@ -79,9 +79,9 @@ const chartEl = ref<HTMLElement | null>(null)
 let chart: any = null
 
 const fallbackRows: QualityReportCenterDto[] = [
-  { cycle: '日报', reportDate: '2026-04-14', reportName: '精煤质量日报', status: '已生成', owner: '李敏', summary: '灰分 9.24%，水分 7.10%' },
-  { cycle: '周报', reportDate: '2026-04-13', reportName: '商品煤周报', status: '待审核', owner: '王超', summary: '周合格率 97.8%' },
-  { cycle: '月报', reportDate: '2026-04-01', reportName: '月度质量分析', status: '编制中', owner: '张岩', summary: '质量稳定率 95.6%' },
+  { cycle: '日报', reportDate: '2026-04-15', reportName: '煤质情况统计报表', status: '已生成', owner: '于思源', summary: '湿混：Mt 36.7%，Mad 9.17%，Aad 39.6%，St,ad 0.4%，Qnet,ar 2253' },
+  { cycle: '日报', reportDate: '2026-04-15', reportName: '煤质情况统计报表', status: '已生成', owner: '于思源', summary: '干后煤泥：Mt 27%，Mad 6.44%，Aad 40.57%，St,ad 0.36%，Qnet,ar 2678' },
+  { cycle: '周报', reportDate: '2026-04-13', reportName: '煤质周度汇总', status: '待审核', owner: '质量科', summary: '本周全硫稳定在 0.35%~0.42%，热值波动可控' },
 ]
 
 const stats = computed(() => [

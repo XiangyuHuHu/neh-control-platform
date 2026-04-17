@@ -21,14 +21,14 @@
             <div class="recommend-grid">
               <div class="big-number">
                 <span>目标密度</span>
-                <strong>1.54 <em>SG</em></strong>
+                <strong>{{ targetDensity.toFixed(2) }} <em>SG</em></strong>
                 <p>根据当前煤层硬度、入料含水量和历史质量波动自动计算，建议本班继续保持稳态运行。</p>
               </div>
 
               <div class="suggestions">
                 <article class="suggest-card blue">
                   <strong>旋流器设定值</strong>
-                  <span>+0.05 SG</span>
+                  <span>{{ densityOffsetText }}</span>
                   <p>适当提升介质密度，稳定当前分选比重。</p>
                 </article>
                 <article class="suggest-card yellow">
@@ -50,9 +50,9 @@
               </div>
               <div class="device-metric">
                 <span>处理量</span>
-                <strong>425 <em>吨/小时</em></strong>
+                <strong>{{ cycloneThroughput.toFixed(0) }} <em>吨/小时</em></strong>
               </div>
-              <div class="mini-progress"><div style="width: 88%"></div></div>
+              <div class="mini-progress"><div :style="{ width: `${throughputProgress}%` }"></div></div>
               <div class="device-foot"><span>效率：98.2%</span><span>磨损程度：低</span></div>
             </article>
 
@@ -63,9 +63,9 @@
               </div>
               <div class="device-metric">
                 <span>固体浓度</span>
-                <strong>34.8 <em>%</em></strong>
+                <strong>{{ slurryConcentration.toFixed(1) }} <em>%</em></strong>
               </div>
-              <div class="mini-progress"><div style="width: 62%"></div></div>
+              <div class="mini-progress"><div :style="{ width: `${concentrationProgress}%` }"></div></div>
               <div class="device-foot"><span>床层高度：1.2 米</span><span>状态：同步中</span></div>
             </article>
           </aside>
@@ -87,10 +87,10 @@
         </section>
 
         <section class="footer-stats">
-          <article class="footer-card"><span>工艺用水酸碱度</span><strong>7.4</strong></article>
-          <article class="footer-card"><span>产率效率</span><strong>84.2%</strong></article>
-          <article class="footer-card"><span>介质损耗率</span><strong>0.68 <em>千克/吨</em></strong></article>
-          <article class="footer-card"><span>累计处理量</span><strong>1.2M <em>吨</em></strong></article>
+          <article class="footer-card"><span>工艺用水酸碱度</span><strong>{{ processPh.toFixed(1) }}</strong></article>
+          <article class="footer-card"><span>产率效率</span><strong>{{ yieldEfficiency.toFixed(1) }}%</strong></article>
+          <article class="footer-card"><span>介质损耗率</span><strong>{{ mediumLoss.toFixed(2) }} <em>千克/吨</em></strong></article>
+          <article class="footer-card"><span>累计处理量</span><strong>{{ totalHandledText }} <em>吨</em></strong></article>
         </section>
       </main>
     </div>
@@ -98,34 +98,79 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { echarts } from '../../utils/echarts'
+import { useIotHub } from '../../composables/useIotHub'
 
 const ashChartEl = ref<HTMLElement | null>(null)
 let ashChart: any = null
 const autoApplied = ref(false)
+const iotHub = useIotHub()
+
+const getNumericTag = (tagCode: string, fallback: number) => {
+  const value = iotHub.getTagValue(tagCode)?.value
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+const targetDensity = computed(() => getNumericTag('coal.quality.target_density', 1.54))
+const cycloneThroughput = computed(() => getNumericTag('coal.cyclone.throughput', 425))
+const slurryConcentration = computed(() => getNumericTag('coal.slurry.concentration', 34.8))
+const processPh = computed(() => getNumericTag('coal.process.water.ph', 7.4))
+const yieldEfficiency = computed(() => getNumericTag('coal.quality.yield_efficiency', 84.2))
+const mediumLoss = computed(() => getNumericTag('coal.medium.loss', 0.68))
+const totalHandled = computed(() => getNumericTag('coal.process.total_handled', 1200000))
+
+const throughputProgress = computed(() => Math.min(100, Math.max(0, Number(((cycloneThroughput.value / 480) * 100).toFixed(0)))))
+const concentrationProgress = computed(() => Math.min(100, Math.max(0, Number(((slurryConcentration.value / 56) * 100).toFixed(0)))))
+const densityOffsetText = computed(() => {
+  const offset = Number((targetDensity.value - 1.49).toFixed(2))
+  return `${offset >= 0 ? '+' : ''}${offset.toFixed(2)} SG`
+})
+const totalHandledText = computed(() => {
+  if (totalHandled.value >= 1000000) return `${(totalHandled.value / 1000000).toFixed(1)}M`
+  return `${totalHandled.value.toFixed(0)}`
+})
+
+type AshSample = { time: string; ash: number; target: number; overLimit: boolean }
+const ashSamples = ref<AshSample[]>([])
+
+const buildAshSamples = () => {
+  const now = new Date()
+  const baseAsh = getNumericTag('coal.quality.ash', 9.1)
+  const target = getNumericTag('coal.quality.ash.target', 9.5)
+  const offsets = [-0.35, -0.22, -0.18, -0.08, 0.05, -0.11, 0.18, 0.12]
+  const samples: AshSample[] = []
+  for (let i = 23; i >= 0; i--) {
+    const h = new Date(now.getTime() - i * 3600000)
+    const time = `${String(h.getHours()).padStart(2, '0')}:00`
+    const offset = offsets[(23 - i) % offsets.length]
+    const ash = Number((baseAsh + offset).toFixed(2))
+    samples.push({
+      time,
+      ash,
+      target,
+      overLimit: ash > target,
+    })
+  }
+  ashSamples.value = samples
+}
 
 function renderAshChart() {
   if (!ashChartEl.value) return
   ashChart?.dispose()
   ashChart = echarts.init(ashChartEl.value)
-  const hours: string[] = []
-  const ashData: number[] = []
-  const now = new Date()
-  for (let i = 23; i >= 0; i--) {
-    const h = new Date(now.getTime() - i * 3600000)
-    hours.push(`${String(h.getHours()).padStart(2, '0')}:00`)
-    ashData.push(Number((8.6 + Math.random() * 1.5).toFixed(2)))
-  }
+  const hours = ashSamples.value.map((item) => item.time)
+  const ashData = ashSamples.value.map((item) => item.ash)
+  const targetData = ashSamples.value.map((item) => item.target)
   ashChart.setOption({
     tooltip: { trigger: 'axis', formatter: (p: any) => `${p[0].axisValue}<br/>灰分：${p[0].value}%${p[1] ? '<br/>目标：' + p[1].value + '%' : ''}` },
     grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
     xAxis: { type: 'category', data: hours, axisLabel: { color: '#8ab4d6' }, axisLine: { lineStyle: { color: '#1e3a52' } } },
     yAxis: { type: 'value', name: '灰分(%)', min: 7, max: 12, axisLabel: { color: '#8ab4d6' }, splitLine: { lineStyle: { color: '#1e3a52' } }, nameTextStyle: { color: '#8ab4d6' } },
     series: [
-      { name: '当前灰分', type: 'bar', data: ashData, itemStyle: { color: (p: any) => p.value > 9.5 ? '#ff7b82' : '#67d8ff', borderRadius: [4, 4, 0, 0] }, barWidth: '55%' },
-      { name: '目标值', type: 'line', data: Array(24).fill(9.5), lineStyle: { type: 'dashed', color: '#95a2b1' }, symbol: 'none', itemStyle: { color: '#95a2b1' } },
+      { name: '当前灰分', type: 'bar', data: ashData, itemStyle: { color: (p: any) => p.value > targetData[p.dataIndex] ? '#ff7b82' : '#67d8ff', borderRadius: [4, 4, 0, 0] }, barWidth: '55%' },
+      { name: '目标值', type: 'line', data: targetData, lineStyle: { type: 'dashed', color: '#95a2b1' }, symbol: 'none', itemStyle: { color: '#95a2b1' } },
     ],
   })
 }
@@ -138,12 +183,9 @@ function applyAutoAdjust() {
 
 function exportQualityReport() {
   const csv = ['时间,灰分(%),目标值(%),是否超标']
-  const now = new Date()
-  for (let i = 23; i >= 0; i--) {
-    const h = new Date(now.getTime() - i * 3600000)
-    const ash = (8.6 + Math.random() * 1.5).toFixed(2)
-    csv.push(`${String(h.getHours()).padStart(2, '0')}:00,${ash},9.50,${Number(ash) > 9.5 ? '是' : '否'}`)
-  }
+  ashSamples.value.forEach((item) => {
+    csv.push(`${item.time},${item.ash.toFixed(2)},${item.target.toFixed(2)},${item.overLimit ? '是' : '否'}`)
+  })
   const blob = new Blob(['\uFEFF' + csv.join('\n')], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -155,10 +197,21 @@ function exportQualityReport() {
 const handleResize = () => ashChart?.resize()
 
 onMounted(async () => {
+  iotHub.subscribe({ pageKey: 'quality-center', intervalMs: 5000 })
+  await iotHub.ensureFresh('quality-center', 2000)
   await nextTick()
+  buildAshSamples()
   renderAshChart()
   window.addEventListener('resize', handleResize)
 })
+
+watch(
+  () => iotHub.generatedAt.value,
+  () => {
+    buildAshSamples()
+    renderAshChart()
+  },
+)
 
 onUnmounted(() => {
   ashChart?.dispose()
