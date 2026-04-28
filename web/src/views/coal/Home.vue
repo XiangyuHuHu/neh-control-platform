@@ -128,11 +128,20 @@ const fallbackCoreMetrics: PortalMetricItem[] = [
 ]
 const coreMetrics = ref<PortalMetricItem[]>(fallbackCoreMetrics)
 
-type MetricTone = 'cyan' | 'green' | 'warn'
+type MetricTone = 'cyan' | 'green' | 'warn' | 'violet' | 'amber'
 
 const resolveMetricTone = (label: string): MetricTone => {
   if (label.includes('功率') || label.includes('能耗')) {
     return 'green'
+  }
+  if (label.includes('入洗') || label.includes('处理')) {
+    return 'violet'
+  }
+  if (label.includes('产量') || label.includes('产出')) {
+    return 'amber'
+  }
+  if (label.includes('设备') || label.includes('OEE')) {
+    return 'cyan'
   }
   if (label.includes('风险') || label.includes('异常') || label.includes('告警')) {
     return 'warn'
@@ -285,6 +294,14 @@ onUnmounted(() => {
 
 .metric-card--warn {
   --metric-accent: #ffd666;
+}
+
+.metric-card--violet {
+  --metric-accent: #a78bfa;
+}
+
+.metric-card--amber {
+  --metric-accent: #ffb86b;
 }
 
 .metric-label {

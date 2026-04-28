@@ -114,7 +114,9 @@ const reagentUnits = [
   { label: '5202 块煤二号', value: '5202' },
 ]
 
-const templates: Record<string, { dataLong: number[]; dataShort: number[]; params: Record<string, any> }> = {
+type JsonRecord = Record<string, unknown>
+
+const templates: Record<string, { dataLong: number[]; dataShort: number[]; params: JsonRecord }> = {
   '601': {
     dataLong: [1.43, 0.42, 18.5, 42, 1, 2850, 11.8],
     dataShort: [1.43, 0.41, 18, 40, 0],
@@ -154,20 +156,26 @@ function applyTemplate() {
   paramsText.value = JSON.stringify(template.params, null, 2)
 }
 
-function parseArray(text: string, label: string) {
-  const parsed = JSON.parse(text)
+function parseArray(text: string, label: string): number[] {
+  const parsed: unknown = JSON.parse(text)
   if (!Array.isArray(parsed)) {
     throw new Error(`${label} 必须是数组`)
   }
-  return parsed.map(Number)
+  return parsed.map((value, index) => {
+    const numericValue = Number(value)
+    if (!Number.isFinite(numericValue)) {
+      throw new Error(`${label} 第 ${index + 1} 项不是有效数字`)
+    }
+    return numericValue
+  })
 }
 
-function parseObject(text: string) {
-  const parsed = JSON.parse(text)
+function parseObject(text: string): JsonRecord {
+  const parsed: unknown = JSON.parse(text)
   if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
     throw new Error('参数对象必须是 JSON 对象')
   }
-  return parsed as Record<string, any>
+  return parsed as JsonRecord
 }
 
 async function loadOverview() {
@@ -206,8 +214,9 @@ async function runPredict() {
 
 function renderChart() {
   if (!chartEl.value || !result.value) return
-  chart?.dispose()
-  chart = echarts.init(chartEl.value)
+  if (!chart) {
+    chart = echarts.init(chartEl.value)
+  }
   chart.setOption({
     tooltip: { trigger: 'axis' },
     xAxis: {
@@ -231,7 +240,7 @@ function renderChart() {
         },
       },
     ],
-  })
+  }, true)
 }
 
 const handleResize = () => chart?.resize()

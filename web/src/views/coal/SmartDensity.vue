@@ -114,7 +114,9 @@ const densityUnits = [
   { label: '316 末煤系统', value: '316' },
 ]
 
-const templates: Record<string, { dataLong: number[]; dataShort: number[]; params: Record<string, any> }> = {
+type JsonRecord = Record<string, unknown>
+
+const templates: Record<string, { dataLong: number[]; dataShort: number[]; params: JsonRecord }> = {
   '3207': {
     dataLong: [1.43, 1.42, 1.44, 1.45, 42, 11.8, 2850, 2180],
     dataShort: [1.43, 1.44, 43, 12, 0, 1],
@@ -155,20 +157,26 @@ function applyTemplate() {
   paramsText.value = JSON.stringify(template.params, null, 2)
 }
 
-function parseArray(text: string, label: string) {
-  const parsed = JSON.parse(text)
+function parseArray(text: string, label: string): number[] {
+  const parsed: unknown = JSON.parse(text)
   if (!Array.isArray(parsed)) {
     throw new Error(`${label} 必须是数组`)
   }
-  return parsed.map(Number)
+  return parsed.map((value, index) => {
+    const numericValue = Number(value)
+    if (!Number.isFinite(numericValue)) {
+      throw new Error(`${label} 第 ${index + 1} 项不是有效数字`)
+    }
+    return numericValue
+  })
 }
 
-function parseObject(text: string) {
-  const parsed = JSON.parse(text)
+function parseObject(text: string): JsonRecord {
+  const parsed: unknown = JSON.parse(text)
   if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
     throw new Error('参数对象必须是 JSON 对象')
   }
-  return parsed as Record<string, any>
+  return parsed as JsonRecord
 }
 
 async function loadOverview() {
@@ -195,8 +203,12 @@ async function runPredict() {
       dataShort: parseArray(dataShortText.value, '短周期数据'),
       params: parseObject(paramsText.value),
     }
-    result.value = await predictSmartDensity(payload)
-    setpoint.value = await predictSmartDensitySetpoint({ data: payload.dataLong.slice(0, 3) })
+    const [predictResult, setpointResult] = await Promise.all([
+      predictSmartDensity(payload),
+      predictSmartDensitySetpoint({ data: payload.dataLong.slice(0, 3) }),
+    ])
+    result.value = predictResult
+    setpoint.value = setpointResult
     await nextTick()
     renderChart()
     ElMessage.success(`智能密控 ${selectedUnit.value} 调用完成`)
@@ -209,8 +221,9 @@ async function runPredict() {
 
 function renderChart() {
   if (!chartEl.value || !result.value) return
-  chart?.dispose()
-  chart = echarts.init(chartEl.value)
+  if (!chart) {
+    chart = echarts.init(chartEl.value)
+  }
   chart.setOption({
     tooltip: { trigger: 'axis' },
     xAxis: {
@@ -234,7 +247,7 @@ function renderChart() {
         },
       },
     ],
-  })
+  }, true)
 }
 
 const handleResize = () => chart?.resize()
