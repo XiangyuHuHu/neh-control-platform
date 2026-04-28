@@ -1,3 +1,6 @@
+import { ElMessage } from 'element-plus'
+import { buildJsonHeaders } from './http'
+
 export interface DispatchRecordDto {
   id?: number
   recordNo: string
@@ -249,6 +252,143 @@ export interface ProcessFlowDto {
   updateTime: string
 }
 
+export interface SmartDensityUnitDto {
+  unit: string
+  area: string
+  status: string
+  density: string
+  diverter: string
+  water: string
+  mode: string
+}
+
+export interface SmartDensitySetpointDto {
+  predMiddlingDensity: number
+  predCleanDensity: number
+  mode: string
+}
+
+export interface SmartDensityPredictRequest {
+  unit: string
+  dataLong: number[]
+  dataShort: number[]
+  params: Record<string, any>
+}
+
+export interface SmartDensityPredictResult {
+  unit: string
+  predDiverter: number
+  predWater: number
+  predDensity: number
+  state: number
+  stateName: string
+  mode: string
+}
+
+export interface SmartReagentUnitDto {
+  unit: string
+  area: string
+  status: string
+  pump: string
+  backupPump: string
+  valve: string
+  mode: string
+}
+
+export interface SmartReagentPredictRequest {
+  unit: string
+  dataLong: number[]
+  dataShort: number[]
+  params: Record<string, any>
+}
+
+export interface SmartReagentPredictResult {
+  unit: string
+  predPump: number
+  numPump: number
+  predBackupPump: number
+  valveMN: number
+  state: number
+  stateName: string
+  mode: string
+}
+
+export interface PowerOperationDto {
+  id?: number
+  applicationNo: string
+  deviceId: number
+  deviceName: string
+  powerRoom: string
+  cabinetNo: string
+  workflowStatus: string
+  operationType?: string
+  riskLevel?: string
+  reason: string
+  requestedBy: string
+  approvedBy?: string
+  verifiedBy?: string
+  repairedBy?: string
+  dispatchDecision?: string
+  remainingTagCount?: number
+  plannedPowerOffTime?: string
+  plannedPowerOnTime?: string
+  approvedAt?: string
+  verifiedAt?: string
+  repairStartedAt?: string
+  repairCompletedAt?: string
+  powerOnAppliedAt?: string
+  powerOnApprovedAt?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface PowerApplyPayload {
+  deviceId: number
+  deviceName: string
+  powerRoom: string
+  cabinetNo: string
+  reason: string
+  requestedBy: string
+  plannedPowerOffTime?: string
+  plannedPowerOnTime?: string
+}
+
+export interface PowerActionPayload {
+  applicationId: number
+  operator: string
+  comment?: string
+  approved?: boolean
+}
+
+export interface EquipmentPredictiveItemDto {
+  device: string
+  healthScore: number
+  failureRisk: string
+  rul: string
+  maintPlan: string
+  priority: string
+  priorityLevel: 'high' | 'medium' | 'low'
+}
+
+export interface EquipmentSpareLinkageDto {
+  device: string
+  partName: string
+  partNo: string
+  stock: number
+  safetyStock: number
+  action: string
+  actionLevel: 'high' | 'medium' | 'low'
+}
+
+export interface EquipmentPredictiveBoardDto {
+  predictiveRows: EquipmentPredictiveItemDto[]
+  spareLinkages: EquipmentSpareLinkageDto[]
+  /** ISO 本地时间字符串，后端生成 */
+  generatedAt?: string
+  /** database：设备与备件均来自库表；fallback：演示兜底；mixed：其一来自库表 */
+  dataSource?: 'database' | 'fallback' | 'mixed'
+}
+
 const buildQuery = (params: Record<string, string | number | boolean | undefined | null>) => {
   const query = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
@@ -261,15 +401,27 @@ const buildQuery = (params: Record<string, string | number | boolean | undefined
 }
 
 const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
+  const headerExtra: Record<string, string> = {}
+  const h = init?.headers
+  if (h instanceof Headers) {
+    h.forEach((v, k) => {
+      headerExtra[k] = v
+    })
+  } else if (h && typeof h === 'object') {
+    Object.assign(headerExtra, h as Record<string, string>)
+  }
+
   const response = await fetch(path, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers || {}),
-    },
     ...init,
+    headers: buildJsonHeaders(headerExtra),
   })
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      ElMessage.error('未登录或权限不足，请重新登录（若已开启 API 认证）')
+    } else {
+      ElMessage.error(`请求失败（${response.status}）`)
+    }
     throw new Error(`Request failed: ${response.status}`)
   }
 
@@ -507,3 +659,78 @@ export const listSafetyHealth = (params: {
 export const listProcessFlow = (params: {
   status?: string
 } = {}) => request<ProcessFlowDto[]>(`/api/process-flow/list${buildQuery(params)}`)
+
+export const getSmartDensityOverview = () =>
+  request<{ units: SmartDensityUnitDto[]; setpoint: SmartDensitySetpointDto }>('/api/smart-density/overview')
+
+export const predictSmartDensity = (payload: SmartDensityPredictRequest) =>
+  request<SmartDensityPredictResult>('/api/smart-density/predict', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const predictSmartDensitySetpoint = (payload: { data: number[] }) =>
+  request<SmartDensitySetpointDto>('/api/smart-density/predict-setpoint', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const getSmartReagentOverview = () =>
+  request<{ units: SmartReagentUnitDto[] }>('/api/smart-reagent/overview')
+
+export const predictSmartReagent = (payload: SmartReagentPredictRequest) =>
+  request<SmartReagentPredictResult>('/api/smart-reagent/predict', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const listPowerOperations = (params: { status?: string; powerRoom?: string } = {}) =>
+  request<PowerOperationDto[]>(`/api/power-operation/list${buildQuery(params)}`)
+
+export const applyPowerOperation = (payload: PowerApplyPayload) =>
+  request<PowerOperationDto>('/api/power-operation/apply', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const approvePowerOff = (payload: PowerActionPayload) =>
+  request<PowerOperationDto>('/api/power-operation/approve-power-off', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const verifyPowerOperation = (payload: PowerActionPayload) =>
+  request<PowerOperationDto>('/api/power-operation/electrician-verify', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const startRepairPowerOperation = (payload: PowerActionPayload) =>
+  request<PowerOperationDto>('/api/power-operation/start-repair', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const completeRepairPowerOperation = (payload: PowerActionPayload) =>
+  request<PowerOperationDto>('/api/power-operation/complete-repair', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const applyPowerOn = (payload: PowerActionPayload) =>
+  request<PowerOperationDto>('/api/power-operation/apply-power-on', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const approvePowerOn = (payload: PowerActionPayload) =>
+  request<PowerOperationDto>('/api/power-operation/approve-power-on', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const getPowerDigitalTwinBoard = (params: { powerRoom?: string } = {}) =>
+  request<Record<string, any>>(`/api/power-operation/digital-twin-board${buildQuery(params)}`)
+
+export const getEquipmentPredictiveBoard = () =>
+  request<EquipmentPredictiveBoardDto>('/api/equipment/predictive-board')

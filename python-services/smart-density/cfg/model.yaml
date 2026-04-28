@@ -1,0 +1,6 @@
+density_predict:
+  LSTM:
+    time_steps: 5
+    output: 2
+density_control:
+dosing:

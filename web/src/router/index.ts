@@ -107,9 +107,19 @@ const router = createRouter({
       component: () => import('../views/coal/Energy.vue'),
     },
     {
+      path: '/coal/spare-parts',
+      name: 'CoalSpareParts',
+      component: () => import('../views/coal/SpareParts.vue'),
+    },
+    {
+      path: '/coal/collaboration',
+      name: 'CoalCollaboration',
+      component: () => import('../views/coal/Collaboration.vue'),
+    },
+    {
       path: '/coal/energy-screen',
       name: 'CoalEnergyScreen',
-      component: () => import('../views/coal/EnergyScreen.vue'),
+      redirect: '/coal/energy',
     },
     {
       path: '/coal/report',
@@ -130,6 +140,11 @@ const router = createRouter({
       path: '/coal/dispatch-log',
       name: 'CoalDispatchLog',
       component: () => import('../views/coal/DispatchLog.vue'),
+    },
+    {
+      path: '/coal/power-operation',
+      name: 'CoalPowerOperation',
+      component: () => import('../views/coal/PowerOperation.vue'),
     },
     {
       path: '/coal/decision',
@@ -175,6 +190,16 @@ const router = createRouter({
       path: '/coal/mechanical',
       name: 'CoalMechanical',
       component: () => import('../views/coal/Mechanical.vue'),
+    },
+    {
+      path: '/coal/smart-density',
+      name: 'CoalSmartDensity',
+      component: () => import('../views/coal/SmartDensity.vue'),
+    },
+    {
+      path: '/coal/smart-reagent',
+      name: 'CoalSmartReagent',
+      component: () => import('../views/coal/SmartReagent.vue'),
     },
     {
       path: '/coal/shift-schedule',

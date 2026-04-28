@@ -165,7 +165,7 @@ const handleExport = () => {
 
 const handlePrint = () => {
   const ok = printRowsAsTable('机电设备台账', rows.value, exportColumns, {
-    subtitle: '金海泽地选煤厂设备档案报表',
+    subtitle: '淖尔壕智能化选煤厂设备档案报表',
     meta: [
       { label: '筛选状态', value: filterStatus.value || '全部' },
       { label: '记录条数', value: `${rows.value.length}` },

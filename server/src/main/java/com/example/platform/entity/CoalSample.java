@@ -10,6 +10,7 @@ public class CoalSample {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "sample_id", unique = true)
     private String sampleId;
     private String sampleName;
     private String sampleTime;

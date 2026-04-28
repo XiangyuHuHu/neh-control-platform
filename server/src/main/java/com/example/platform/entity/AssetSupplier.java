@@ -11,6 +11,7 @@ public class AssetSupplier {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "supplier_id", unique = true)
     private String supplierId;
     private String name;
     private String contactPerson;

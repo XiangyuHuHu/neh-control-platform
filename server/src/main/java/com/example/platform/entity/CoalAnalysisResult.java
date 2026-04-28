@@ -11,6 +11,7 @@ public class CoalAnalysisResult {
     private Long id;
 
     private String resultId;
+    @Column(name = "sample_id")
     private String sampleId;
     private String analysisTime;
     private Double moisture;
@@ -25,7 +26,12 @@ public class CoalAnalysisResult {
     private String status;
 
     @ManyToOne
-    @JoinColumn(name = "sampleId", insertable = false, updatable = false)
+    @JoinColumn(
+            name = "sample_id",
+            referencedColumnName = "sample_id",
+            insertable = false,
+            updatable = false
+    )
     private CoalSample sample;
 
     // Getters and Setters

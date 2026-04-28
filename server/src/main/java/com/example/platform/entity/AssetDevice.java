@@ -11,17 +11,21 @@ public class AssetDevice {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "device_id", unique = true)
     private String deviceId;
     private String name;
     private String model;
     private String specification;
     private String manufacturer;
+    @Column(name = "supplier_id")
     private String supplierId;
     private String purchaseDate;
     private String installDate;
     private String commissioningDate;
     private String status;
+    @Column(name = "location_id")
     private String locationId;
+    @Column(name = "category_id")
     private String categoryId;
     private String description;
     private String technicalParameters;
@@ -31,17 +35,32 @@ public class AssetDevice {
     private String maintenancePerson;
 
     @ManyToOne
-    @JoinColumn(name = "locationId", insertable = false, updatable = false)
+    @JoinColumn(
+            name = "location_id",
+            referencedColumnName = "code",
+            insertable = false,
+            updatable = false
+    )
     @TableField(exist = false)
     private AssetLocation location;
 
     @ManyToOne
-    @JoinColumn(name = "categoryId", insertable = false, updatable = false)
+    @JoinColumn(
+            name = "category_id",
+            referencedColumnName = "code",
+            insertable = false,
+            updatable = false
+    )
     @TableField(exist = false)
     private AssetCategory category;
 
     @ManyToOne
-    @JoinColumn(name = "supplierId", insertable = false, updatable = false)
+    @JoinColumn(
+            name = "supplier_id",
+            referencedColumnName = "supplier_id",
+            insertable = false,
+            updatable = false
+    )
     @TableField(exist = false)
     private AssetSupplier supplier;
 

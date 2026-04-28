@@ -8,7 +8,7 @@
         <span>{{ weather.text }}</span>
       </div>
       <div class="header-title">
-        <h1>生产消耗</h1>
+        <h1>消耗大屏</h1>
       </div>
       <div class="header-right">
         <button type="button" @click="openDialog('electricity')">电耗查询</button>
@@ -245,41 +245,41 @@ const mediumQuery = reactive({
 })
 
 const electricityRows = [
-  { date: '01-03', usage: 81493.16, unitConsumption: 0.0, shift: '早班', remark: '入洗负荷偏低' },
-  { date: '01-05', usage: 82850.24, unitConsumption: 2.78, shift: '中班', remark: '系统运行稳定' },
-  { date: '01-06', usage: 83627.52, unitConsumption: 2.8, shift: '夜班', remark: '主洗系统提升' },
-  { date: '01-07', usage: 86124.52, unitConsumption: 2.84, shift: '早班', remark: '分选密度调整后稳定' },
-  { date: '01-08', usage: 85758.68, unitConsumption: 2.95, shift: '中班', remark: '矸石带负荷提高' },
-  { date: '01-09', usage: 76725.08, unitConsumption: 3.57, shift: '夜班', remark: '压滤系统检修' },
-  { date: '01-10', usage: 86022.84, unitConsumption: 3.26, shift: '早班', remark: '恢复正常' },
-  { date: '01-11', usage: 90301.0, unitConsumption: 3.25, shift: '中班', remark: '高负荷满产' },
-  { date: '01-12', usage: 75410.44, unitConsumption: 3.25, shift: '夜班', remark: '计划降负荷' },
+  { date: '01-03', usage: 81493.16, unitConsumption: 3.0, shift: '早班', remark: '入洗负荷偏低' },
+  { date: '01-05', usage: 82850.24, unitConsumption: 3.08, shift: '中班', remark: '系统运行稳定' },
+  { date: '01-06', usage: 83627.52, unitConsumption: 3.12, shift: '夜班', remark: '主洗系统提升' },
+  { date: '01-07', usage: 86124.52, unitConsumption: 3.18, shift: '早班', remark: '分选密度调整后稳定' },
+  { date: '01-08', usage: 85758.68, unitConsumption: 3.22, shift: '中班', remark: '矸石带负荷提高' },
+  { date: '01-09', usage: 76725.08, unitConsumption: 3.5, shift: '夜班', remark: '压滤系统检修' },
+  { date: '01-10', usage: 86022.84, unitConsumption: 3.28, shift: '早班', remark: '恢复正常' },
+  { date: '01-11', usage: 90301.0, unitConsumption: 3.32, shift: '中班', remark: '高负荷满产' },
+  { date: '01-12', usage: 75410.44, unitConsumption: 3.26, shift: '夜班', remark: '计划降负荷' },
 ]
 
 const waterRows = [
-  { date: '2025-01-13', office: 0, workshop: 100, remark: '补水正常' },
-  { date: '2025-01-12', office: 144, workshop: 434, remark: '后勤区补水增加' },
-  { date: '2025-01-11', office: 202, workshop: 367, remark: '主系统冲洗' },
-  { date: '2025-01-10', office: 312, workshop: 801, remark: '洗选高负荷运行' },
-  { date: '2025-01-09', office: 298, workshop: 540, remark: '药剂补充联动' },
-  { date: '2025-01-08', office: 352, workshop: 172, remark: '低位水池补水' },
-  { date: '2025-01-07', office: 740, workshop: 209, remark: '冲洗作业' },
-  { date: '2025-01-05', office: 620, workshop: 515, remark: '系统调水' },
-  { date: '2025-01-03', office: 416, workshop: 579, remark: '全厂高负荷' },
-  { date: '2025-01-01', office: 86, workshop: 0, remark: '节假日低负荷' },
+  { date: '2025-01-13', office: 0.02, workshop: 0.06, remark: '补水正常' },
+  { date: '2025-01-12', office: 0.03, workshop: 0.07, remark: '后勤区补水增加' },
+  { date: '2025-01-11', office: 0.02, workshop: 0.06, remark: '主系统冲洗' },
+  { date: '2025-01-10', office: 0.04, workshop: 0.08, remark: '洗选高负荷运行' },
+  { date: '2025-01-09', office: 0.03, workshop: 0.07, remark: '系统补水调整' },
+  { date: '2025-01-08', office: 0.02, workshop: 0.05, remark: '低位水池补水' },
+  { date: '2025-01-07', office: 0.05, workshop: 0.06, remark: '冲洗作业' },
+  { date: '2025-01-05', office: 0.04, workshop: 0.06, remark: '系统调水' },
+  { date: '2025-01-03', office: 0.03, workshop: 0.06, remark: '全厂高负荷' },
+  { date: '2025-01-01', office: 0.01, workshop: 0.02, remark: '节假日低负荷' },
 ]
 
 const mediumRows = [
-  { date: '01-04', value: 0.56, category: '重介', operator: '张伟', remark: '介耗稳定' },
-  { date: '01-05', value: 0.57, category: '重介', operator: '李超', remark: '洗选负荷提升' },
-  { date: '01-06', value: 0.56, category: '磁选', operator: '王敏', remark: '介质密度正常' },
-  { date: '01-07', value: 0.54, category: '重介', operator: '周洋', remark: '系统效率偏高' },
-  { date: '01-08', value: 0.58, category: '重介', operator: '赵凯', remark: '原煤波动' },
-  { date: '01-09', value: 0.56, category: '磁选', operator: '孙博', remark: '补介及时' },
-  { date: '01-10', value: 0.53, category: '重介', operator: '刘勇', remark: '运行平稳' },
-  { date: '01-11', value: 0.44, category: '磁选', operator: '陈峰', remark: '清洗后下降' },
-  { date: '01-12', value: 0.63, category: '重介', operator: '高磊', remark: '块煤系统波动' },
-  { date: '01-13', value: 0.64, category: '重介', operator: '马强', remark: '需持续跟踪' },
+  { date: '01-04', value: 0.38, category: '重介', operator: '张伟', remark: '介耗稳定' },
+  { date: '01-05', value: 0.39, category: '重介', operator: '李超', remark: '系统运行稳定' },
+  { date: '01-06', value: 0.4, category: '磁选', operator: '王敏', remark: '介质密度正常' },
+  { date: '01-07', value: 0.41, category: '重介', operator: '周洋', remark: '运行效率平稳' },
+  { date: '01-08', value: 0.4, category: '重介', operator: '赵凯', remark: '原煤波动' },
+  { date: '01-09', value: 0.39, category: '磁选', operator: '孙博', remark: '补介及时' },
+  { date: '01-10', value: 0.4, category: '重介', operator: '刘勇', remark: '运行平稳' },
+  { date: '01-11', value: 0.36, category: '磁选', operator: '陈峰', remark: '清洗后下降' },
+  { date: '01-12', value: 0.42, category: '重介', operator: '高磊', remark: '块煤系统波动' },
+  { date: '01-13', value: 0.4, category: '重介', operator: '马强', remark: '维持当前水平' },
 ]
 
 const airGaugeRef = ref<HTMLElement | null>(null)
@@ -306,6 +306,47 @@ const openDialog = async (type: 'electricity' | 'water' | 'medium') => {
   renderDialogCharts()
 }
 
+const syncScreenCopy = () => {
+  const setHtml = (selector: string, html: string) => {
+    const el = document.querySelector(selector)
+    if (el) el.innerHTML = html
+  }
+
+  const setText = (selector: string, text: string) => {
+    const el = document.querySelector(selector)
+    if (el) el.textContent = text
+  }
+
+  setText('.energy-screen .header-title h1', '消耗大屏')
+  setText('.energy-screen .summary-card:nth-child(1) span', '介耗')
+  setHtml('.energy-screen .summary-card:nth-child(1) strong', '0.4 <small>kg/t</small>')
+  setText('.energy-screen .summary-card:nth-child(2) span', '药耗')
+  setHtml('.energy-screen .summary-card:nth-child(2) strong', '26.3 <small>g/t</small>')
+  setText('.energy-screen .summary-card:nth-child(3) span', '电耗')
+  setHtml('.energy-screen .summary-card:nth-child(3) strong', '3.2 <small>kWh/t</small>')
+  setText('.energy-screen .screen-grid > .panel:nth-child(1) .panel-title', '风流量')
+  setText('.energy-screen .planet--1 strong', '0.4')
+  setText('.energy-screen .planet--1 span', '介耗 kg/t')
+  setText('.energy-screen .planet--2 strong', '2.6000')
+  setText('.energy-screen .planet--2 span', '耗电量 3.0-3.5')
+  setText('.energy-screen .planet--3 strong', '0.5')
+  setText('.energy-screen .planet--3 span', '风流量 m³/t')
+  setText('.energy-screen .planet--5 strong', '0.06')
+  setText('.energy-screen .planet--5 span', '水耗 m³/t')
+  setText('.energy-screen .planet--7 strong', '26.3')
+  setText('.energy-screen .planet--7 span', '药耗 g/t')
+  setText('.energy-screen .screen-grid > .panel:nth-child(3) .panel-title', '水耗')
+  setText('.energy-screen .screen-grid > .panel:nth-child(4) .panel-title span', '介耗')
+  setText('.energy-screen .screen-grid > .panel:nth-child(5) .panel-title span', '耗电量')
+  setText('.energy-screen .screen-grid > .panel:nth-child(6) .panel-title span', '药耗')
+  setText('.energy-screen .screen-grid > .panel:nth-child(6) .link-btn', '查询药耗')
+
+  const planet4 = document.querySelector('.energy-screen .planet--4') as HTMLElement | null
+  if (planet4) planet4.style.display = 'none'
+  const planet6 = document.querySelector('.energy-screen .planet--6') as HTMLElement | null
+  if (planet6) planet6.style.display = 'none'
+}
+
 const renderCharts = () => {
   if (airGaugeRef.value) {
     airGaugeChart ??= echarts.init(airGaugeRef.value)
@@ -316,12 +357,11 @@ const renderCharts = () => {
           radius: ['56%', '78%'],
           center: ['50%', '48%'],
           data: [
-            { value: 249.94, name: '高风流量', itemStyle: { color: '#9fd35f' } },
-            { value: 319.31, name: '低风流量', itemStyle: { color: '#6d84db' } },
+            { value: 0.5, name: '风流量', itemStyle: { color: '#6d84db' } },
           ],
           label: {
             color: '#eaf6ff',
-            formatter: ({ name, value }: { name: string; value: number }) => `${name}\n${value.toFixed(2)}m³/h`,
+            formatter: ({ name, value }: { name: string; value: number }) => `${name}\n${value.toFixed(2)}m³/t`,
             fontSize: 16,
           },
         },
@@ -338,12 +378,11 @@ const renderCharts = () => {
           radius: ['56%', '78%'],
           center: ['50%', '48%'],
           data: [
-            { value: 126.67, name: '3251补水', itemStyle: { color: '#16dfff' } },
-            { value: 38.28, name: '后勤补水', itemStyle: { color: '#98cf67' } },
+            { value: 0.06, name: '水耗', itemStyle: { color: '#16dfff' } },
           ],
           label: {
             color: '#eaf6ff',
-            formatter: ({ name, value }: { name: string; value: number }) => `${name}\n${value.toFixed(2)}m³/h`,
+            formatter: ({ name, value }: { name: string; value: number }) => `${name}\n${value.toFixed(2)}m³/t`,
             fontSize: 16,
           },
         },
@@ -587,6 +626,7 @@ watch(
 
 onMounted(async () => {
   await nextTick()
+  syncScreenCopy()
   renderCharts()
   window.addEventListener('resize', renderCharts)
   window.addEventListener('resize', renderDialogCharts)

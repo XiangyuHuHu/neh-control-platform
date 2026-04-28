@@ -134,7 +134,7 @@ const handleExport = () => {
 
 const handlePrint = () => {
   const ok = printRowsAsTable('质量报表列表', rows.value, exportColumns, {
-    subtitle: '金海泽地选煤厂质量报表中心',
+    subtitle: '淖尔壕智能化选煤厂质量报表中心',
     meta: [
       { label: '筛选周期', value: filterCycle.value || '全部' },
       { label: '记录条数', value: `${rows.value.length}` },

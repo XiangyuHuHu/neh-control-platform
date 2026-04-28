@@ -10,7 +10,9 @@ public class AlarmRecord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "alarm_id", unique = true)
     private String alarmId;
+    @Column(name = "device_id")
     private String deviceId;
     private String pointId;
     private String ruleId;

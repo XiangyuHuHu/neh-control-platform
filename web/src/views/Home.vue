@@ -3,9 +3,16 @@
     <header class="hero-shell">
       <div class="hero-copy">
         <p class="eyebrow">Coal Operations Command</p>
-        <img src="/logo-sdny.png" alt="山东能源集团" class="hero-logo" />
-        <h1>金海泽地选煤厂综合管控平台</h1>
+        <img :src="jinhaizediLogo" alt="淖尔壕智能化选煤厂" class="hero-logo" />
+        <h1>淖尔壕智能化选煤厂</h1>
         <p class="hero-summary">旧版业务风入口，侧重表格、台账、录入和报表，适合功能核对与流程演示。</p>
+        <div class="metric-row">
+          <article v-for="item in coreMetrics" :key="item.label" class="metric-card">
+            <span class="metric-label">{{ item.label }}</span>
+            <strong class="metric-value">{{ item.value }}</strong>
+            <small class="metric-note">{{ item.note }}</small>
+          </article>
+        </div>
         <div class="hero-actions">
           <router-link class="primary-link" to="/coal/dashboard">进入监控中心</router-link>
           <router-link class="secondary-link" to="/coal/production">查看生产管理</router-link>
@@ -89,6 +96,8 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
+import jinhaizediLogo from '../assets/jinhaizedi-logo.svg'
+import { getPortalMetrics, type PortalMetricItem } from '../api/dashboard'
 
 const currentTime = ref('')
 const currentDate = ref('')
@@ -99,6 +108,14 @@ const runtimeStatus = [
   { label: '能耗偏差', value: '-2.3%' },
 ]
 
+const fallbackCoreMetrics: PortalMetricItem[] = [
+  { label: '今日入洗量', value: '5,200 t', note: '较昨日 +4.2%' },
+  { label: '精煤产量', value: '3,400 t', note: '达成率 97.1%' },
+  { label: '实时总功率', value: '850 kW', note: '峰段负荷可控' },
+  { label: '当前排队车辆', value: '12 辆', note: '平均等待 16 分钟' },
+]
+const coreMetrics = ref<PortalMetricItem[]>(fallbackCoreMetrics)
+
 const primaryEntries = [
   { path: '/coal/dashboard', title: '监控中心', desc: '总览、告警、关键指标和生产大屏' },
   { path: '/coal/production', title: '生产管理', desc: '计划、执行、工艺与统计' },
@@ -108,7 +125,7 @@ const primaryEntries = [
 
 const topicEntries = [
   { path: '/coal/storage', title: '储装管理', desc: '入厂、销售、装车和库存' },
-  { path: '/coal/energy', title: '能耗管理', desc: '水、电、介质、药剂对比' },
+  { path: '/coal/energy', title: '消耗大屏', desc: '水、电、介质、药剂对比' },
   { path: '/coal/dispatch', title: '调度管理', desc: '当班事项、事故记录和遗留问题' },
   { path: '/coal/decision', title: '智能决策', desc: '工艺评估、预测与建议输出' },
   { path: '/coal/monitor', title: '平台监测', desc: '人员、环境、接口与性能监测' },
@@ -142,11 +159,21 @@ const updateTime = () => {
   })
 }
 
+const loadPortalMetrics = async () => {
+  try {
+    const data = await getPortalMetrics()
+    coreMetrics.value = data.metrics?.length ? data.metrics : fallbackCoreMetrics
+  } catch {
+    coreMetrics.value = fallbackCoreMetrics
+  }
+}
+
 let timer = 0
 
 onMounted(() => {
   updateTime()
   timer = window.setInterval(updateTime, 1000)
+  loadPortalMetrics()
 })
 
 onUnmounted(() => {
@@ -211,6 +238,42 @@ onUnmounted(() => {
   display: flex;
   gap: 12px;
   margin-top: 20px;
+}
+
+.metric-row {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 12px;
+  max-width: 780px;
+}
+
+.metric-card {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(72, 123, 190, 0.2);
+  background: linear-gradient(180deg, rgba(233, 240, 248, 0.94), rgba(223, 234, 245, 0.94));
+}
+
+.metric-label {
+  display: block;
+  color: #4f6d8e;
+  font-size: 12px;
+}
+
+.metric-value {
+  display: block;
+  margin-top: 8px;
+  font-size: 24px;
+  color: #184f86;
+  line-height: 1.2;
+}
+
+.metric-note {
+  display: block;
+  margin-top: 8px;
+  color: #587aa3;
+  font-size: 12px;
 }
 
 .primary-link,
@@ -347,9 +410,21 @@ onUnmounted(() => {
     grid-template-columns: 1fr;
   }
 
+  .metric-row {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+    max-width: 520px;
+  }
+
   .section-head,
   .hero-actions {
     flex-direction: column;
+  }
+}
+
+@media (max-width: 720px) {
+  .metric-row {
+    grid-template-columns: 1fr;
+    max-width: 340px;
   }
 }
 </style>

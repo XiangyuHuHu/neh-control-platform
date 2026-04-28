@@ -81,3 +81,63 @@ FROM (
     data_source, remark, create_by, create_time, update_by, update_time
 )
 WHERE NOT EXISTS (SELECT 1 FROM energy_consumption LIMIT 1);
+
+CREATE TABLE IF NOT EXISTS power_operation_application (
+    id BIGSERIAL PRIMARY KEY,
+    application_no VARCHAR(64) UNIQUE,
+    device_id BIGINT,
+    device_name VARCHAR(255),
+    power_room VARCHAR(128),
+    cabinet_no VARCHAR(64),
+    workflow_status VARCHAR(64),
+    operation_type VARCHAR(64),
+    risk_level VARCHAR(32),
+    reason TEXT,
+    requested_by VARCHAR(64),
+    approved_by VARCHAR(64),
+    verified_by VARCHAR(64),
+    repaired_by VARCHAR(64),
+    dispatch_decision VARCHAR(64),
+    remaining_tag_count INTEGER DEFAULT 0,
+    planned_power_off_time TIMESTAMP,
+    planned_power_on_time TIMESTAMP,
+    approved_at TIMESTAMP,
+    verified_at TIMESTAMP,
+    repair_started_at TIMESTAMP,
+    repair_completed_at TIMESTAMP,
+    power_on_applied_at TIMESTAMP,
+    power_on_approved_at TIMESTAMP,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_power_operation_status ON power_operation_application(workflow_status);
+CREATE INDEX IF NOT EXISTS idx_power_operation_room ON power_operation_application(power_room);
+CREATE INDEX IF NOT EXISTS idx_power_operation_created_at ON power_operation_application(created_at);
+
+CREATE TABLE IF NOT EXISTS power_operation_log (
+    id BIGSERIAL PRIMARY KEY,
+    application_id BIGINT NOT NULL,
+    action_type VARCHAR(64),
+    before_status VARCHAR(64),
+    after_status VARCHAR(64),
+    operator_name VARCHAR(64),
+    comment TEXT,
+    created_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_power_operation_log_app_id ON power_operation_log(application_id);
+CREATE INDEX IF NOT EXISTS idx_power_operation_log_created_at ON power_operation_log(created_at);
+
+CREATE TABLE IF NOT EXISTS power_device_tag_record (
+    id BIGSERIAL PRIMARY KEY,
+    application_id BIGINT NOT NULL,
+    device_id BIGINT,
+    tag_user VARCHAR(64),
+    tag_status VARCHAR(32),
+    tagged_at TIMESTAMP,
+    untagged_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_power_device_tag_app_id ON power_device_tag_record(application_id);
+CREATE INDEX IF NOT EXISTS idx_power_device_tag_status ON power_device_tag_record(tag_status);

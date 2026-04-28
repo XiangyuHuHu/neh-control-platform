@@ -1,3 +1,6 @@
+import { ElMessage } from 'element-plus'
+import { buildJsonHeaders } from './http'
+
 export interface ApiResponse<T> {
   code: number
   message: string
@@ -104,15 +107,27 @@ const buildQuery = (params: Record<string, string | number | boolean | undefined
 }
 
 const request = async <T>(path: string, init?: RequestInit): Promise<ApiResponse<T>> => {
+  const headerExtra: Record<string, string> = {}
+  const h = init?.headers
+  if (h instanceof Headers) {
+    h.forEach((v, k) => {
+      headerExtra[k] = v
+    })
+  } else if (h && typeof h === 'object') {
+    Object.assign(headerExtra, h as Record<string, string>)
+  }
+
   const response = await fetch(`/api/iot${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers || {}),
-    },
     ...init,
+    headers: buildJsonHeaders(headerExtra),
   })
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      ElMessage.error('未登录或权限不足，请重新登录（若已开启 API 认证）')
+    } else {
+      ElMessage.error(`IOT 请求失败（${response.status}）`)
+    }
     throw new Error(`IOT request failed: ${response.status}`)
   }
 

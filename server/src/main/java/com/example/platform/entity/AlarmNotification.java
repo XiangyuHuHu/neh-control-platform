@@ -11,7 +11,9 @@ public class AlarmNotification {
     private Long id;
 
     private String notificationId;
+    @Column(name = "alarm_id")
     private String alarmId;
+    @Column(name = "device_id")
     private String deviceId;
     private String notificationType;
     private String notificationContent;
@@ -22,11 +24,21 @@ public class AlarmNotification {
     private String responseResult;
 
     @ManyToOne
-    @JoinColumn(name = "alarmId", insertable = false, updatable = false)
+    @JoinColumn(
+            name = "alarm_id",
+            referencedColumnName = "alarm_id",
+            insertable = false,
+            updatable = false
+    )
     private AlarmRecord alarm;
 
     @ManyToOne
-    @JoinColumn(name = "deviceId", insertable = false, updatable = false)
+    @JoinColumn(
+            name = "device_id",
+            referencedColumnName = "device_id",
+            insertable = false,
+            updatable = false
+    )
     private AssetDevice device;
 
     // Getters and Setters

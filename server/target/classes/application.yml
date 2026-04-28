@@ -48,3 +48,12 @@ platform:
       batch-write-size: ${KEPSERVER_BATCH_WRITE_SIZE:500}
       batch-write-interval-ms: ${KEPSERVER_BATCH_WRITE_INTERVAL:5000}
       opcua-namespace-index: ${KEPSERVER_OPCUA_NAMESPACE_INDEX:2}
+  model-services:
+    smart-density:
+      enabled: ${SMART_DENSITY_ENABLED:false}
+      base-url: ${SMART_DENSITY_BASE_URL:http://127.0.0.1:6789}
+      timeout-ms: ${SMART_DENSITY_TIMEOUT_MS:3000}
+    smart-reagent:
+      enabled: ${SMART_REAGENT_ENABLED:false}
+      base-url: ${SMART_REAGENT_BASE_URL:http://127.0.0.1:6788}
+      timeout-ms: ${SMART_REAGENT_TIMEOUT_MS:3000}

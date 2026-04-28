@@ -130,7 +130,7 @@ const handleExport = () => {
 
 const handlePrint = () => {
   const ok = printRowsAsTable('建模分析结果', rows.value, exportColumns, {
-    subtitle: '金海泽地选煤厂专项分析报表',
+    subtitle: '淖尔壕智能化选煤厂专项分析报表',
     meta: [
       { label: '报表类型', value: '建模分析专题' },
       { label: '记录条数', value: `${rows.value.length}` },

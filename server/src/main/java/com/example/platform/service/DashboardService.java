@@ -21,4 +21,6 @@ public interface DashboardService {
     Map<String, Object> getRealTimeData();
 
     Map<String, Object> getTrendData(String type, String timeRange);
+
+    Map<String, Object> getPortalMetrics();
 }

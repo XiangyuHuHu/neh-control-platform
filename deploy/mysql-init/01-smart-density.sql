@@ -1,0 +1,18 @@
+CREATE DATABASE IF NOT EXISTS ai_data CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE ai_data;
+
+CREATE TABLE IF NOT EXISTS opcdata (
+  TIME DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `3207rhoSD_oldSys` DOUBLE NULL,
+  `3208rhoSD_oldSys` DOUBLE NULL,
+  `KMrhoSD_oldSys` DOUBLE NULL,
+  PRIMARY KEY (TIME)
+);
+
+INSERT INTO opcdata (TIME, `3207rhoSD_oldSys`, `3208rhoSD_oldSys`, `KMrhoSD_oldSys`)
+VALUES (NOW(), 1.43, 1.47, 1.38)
+ON DUPLICATE KEY UPDATE
+  `3207rhoSD_oldSys` = VALUES(`3207rhoSD_oldSys`),
+  `3208rhoSD_oldSys` = VALUES(`3208rhoSD_oldSys`),
+  `KMrhoSD_oldSys` = VALUES(`KMrhoSD_oldSys`);

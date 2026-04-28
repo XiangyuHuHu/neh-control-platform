@@ -333,7 +333,7 @@ const handleRefresh = () => loadRows(true)
 
 const handlePrint = () => {
   const ok = printRowsAsTable('工艺流程节点清单', rows.value, exportColumns, {
-    subtitle: '金海泽地选煤厂工艺流程专项报表',
+    subtitle: '淖尔壕智能化选煤厂工艺流程专项报表',
     meta: [
       { label: '筛选状态', value: filterStatus.value || '全部' },
       { label: '记录条数', value: `${rows.value.length}` },

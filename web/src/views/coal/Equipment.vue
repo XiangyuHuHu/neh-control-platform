@@ -21,6 +21,56 @@
       </article>
     </section>
 
+    <section class="prediction-grid">
+      <p class="board-meta">
+        数据更新时间：{{ boardMeta.generatedAt || '—' }} · 来源：{{ dataSourceLabel }}
+        <el-button size="small" text type="primary" @click="loadPredictiveBoard">刷新</el-button>
+      </p>
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>预测维护优先级</h2>
+            <p>按健康度、故障概率和剩余寿命自动排序，优先处理高风险设备。</p>
+          </div>
+        </div>
+        <el-table :data="predictiveRows" size="small" class="data-table">
+          <el-table-column prop="device" label="设备" min-width="170" />
+          <el-table-column prop="healthScore" label="健康度" width="90" />
+          <el-table-column prop="failureRisk" label="故障概率" width="100" />
+          <el-table-column prop="rul" label="剩余寿命" width="110" />
+          <el-table-column prop="maintPlan" label="建议维护窗口" min-width="170" />
+          <el-table-column prop="priority" label="优先级" width="90">
+            <template #default="{ row }">
+              <span :class="['priority-tag', row.priorityLevel]">{{ row.priority }}</span>
+            </template>
+          </el-table-column>
+        </el-table>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>备件联动建议</h2>
+            <p>故障预警自动触发库存校验，形成“运维-物资”联动。</p>
+          </div>
+          <el-button @click="router.push('/coal/spare-parts')">进入备件管理</el-button>
+        </div>
+        <div class="linkage-list">
+          <div v-for="item in spareLinkages" :key="item.device + item.partNo" class="linkage-item">
+            <div class="linkage-main">
+              <strong>{{ item.device }}</strong>
+              <p>{{ item.partName }}（{{ item.partNo }}）</p>
+            </div>
+            <div class="linkage-meta">
+              <span>现库存 {{ item.stock }}</span>
+              <span>安全库存 {{ item.safetyStock }}</span>
+              <span :class="['linkage-action', item.actionLevel]">{{ item.action }}</span>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
     <section class="content-grid">
       <article class="panel">
         <div class="panel-head">
@@ -106,8 +156,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import {
+  getEquipmentPredictiveBoard,
+  type EquipmentPredictiveBoardDto,
+  type EquipmentPredictiveItemDto,
+  type EquipmentSpareLinkageDto,
+} from '../../api/coal-business'
 
 const router = useRouter()
 const showLedger = ref(false)
@@ -118,6 +174,38 @@ const kpis = [
   { label: '待执行维保', value: '3 项', note: '含定期保养和紧急检修' },
   { label: '高风险设备', value: '1 台', note: '需优先安排处理' },
 ]
+
+const predictiveFallbackRows: EquipmentPredictiveItemDto[] = [
+  { device: '311中煤卧式离心机', healthScore: 64, failureRisk: '78%', rul: '4 天', maintPlan: '24小时内停机检修', priority: 'P1', priorityLevel: 'high' },
+  { device: '325矸石脱介筛', healthScore: 79, failureRisk: '42%', rul: '11 天', maintPlan: '本周末窗口维保', priority: 'P2', priorityLevel: 'medium' },
+  { device: '602精煤压滤机入料泵', healthScore: 92, failureRisk: '18%', rul: '35 天', maintPlan: '按月保养即可', priority: 'P3', priorityLevel: 'low' },
+]
+
+const spareFallbackLinkages: EquipmentSpareLinkageDto[] = [
+  { device: '311中煤卧式离心机', partName: '主轴轴承', partNo: 'SP-311-002', stock: 1, safetyStock: 3, action: '立即采购补库', actionLevel: 'high' },
+  { device: '325矸石脱介筛', partName: '筛板组件', partNo: 'SP-325-011', stock: 2, safetyStock: 2, action: '锁定本周备件', actionLevel: 'medium' },
+  { device: '101原煤皮带机', partName: '托辊组件', partNo: 'SP-101-008', stock: 18, safetyStock: 12, action: '库存充足', actionLevel: 'low' },
+]
+
+const predictiveRows = ref<EquipmentPredictiveItemDto[]>(predictiveFallbackRows)
+const spareLinkages = ref<EquipmentSpareLinkageDto[]>(spareFallbackLinkages)
+
+const boardMeta = ref<Pick<EquipmentPredictiveBoardDto, 'generatedAt' | 'dataSource'>>({})
+
+const dataSourceLabel = computed(() => {
+  if (boardMeta.value.dataSource == null) {
+    return '载入中…'
+  }
+  switch (boardMeta.value.dataSource) {
+    case 'database':
+      return '台账与备件库（规则计算）'
+    case 'mixed':
+      return '部分台账 / 部分演示'
+    case 'fallback':
+    default:
+      return '演示兜底（接口不可用或无数据）'
+  }
+})
 
 const devices = [
   { name: '602精煤压滤机入料泵', location: '主洗车间', status: '正常运行', level: 'good', temp: '48.2°C', vibration: '1.8 mm/s', load: '72%', health: '92 分', life: 72, color: '#45cbff' },
@@ -138,6 +226,29 @@ const ledgerRows = [
   { device: '101原煤皮带机', code: 'EQ-101-001', location: '原煤仓上', type: '输送设备', owner: '生产二班', runtime: '22.8 h', lastRepair: '04-09', nextPlan: '04-29', status: '运行中', note: '负载平稳' },
   { device: '325矸石脱介筛', code: 'EQ-325-003', location: '筛分车间', type: '筛分设备', owner: '生产三班', runtime: '20.4 h', lastRepair: '03-28', nextPlan: '04-14', status: '待保养', note: '筛面磨损偏大' },
 ]
+
+const formatNow = () =>
+  new Date().toLocaleString('zh-CN', { hour12: false })
+
+const loadPredictiveBoard = async () => {
+  try {
+    const data = await getEquipmentPredictiveBoard()
+    boardMeta.value = {
+      generatedAt: data.generatedAt || formatNow(),
+      dataSource: data.dataSource ?? 'database',
+    }
+    predictiveRows.value = data.predictiveRows?.length ? data.predictiveRows : predictiveFallbackRows
+    spareLinkages.value = data.spareLinkages?.length ? data.spareLinkages : spareFallbackLinkages
+  } catch {
+    boardMeta.value = { generatedAt: formatNow(), dataSource: 'fallback' }
+    predictiveRows.value = predictiveFallbackRows
+    spareLinkages.value = spareFallbackLinkages
+  }
+}
+
+onMounted(() => {
+  loadPredictiveBoard()
+})
 </script>
 
 <style scoped>
@@ -231,6 +342,26 @@ const ledgerRows = [
   display: grid;
   grid-template-columns: 1.25fr 0.75fr;
   gap: 16px;
+}
+
+.prediction-grid {
+  width: min(100%, 1680px);
+  margin: 0 auto 16px;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 16px;
+}
+
+.board-meta {
+  grid-column: 1 / -1;
+  margin: 0 0 4px;
+  padding: 0 4px;
+  font-size: 13px;
+  color: rgba(126, 207, 255, 0.85);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
 }
 
 .panel {
@@ -330,6 +461,82 @@ const ledgerRows = [
   gap: 14px;
 }
 
+.linkage-list {
+  display: grid;
+  gap: 12px;
+}
+
+.linkage-item {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(14, 27, 39, 0.55);
+}
+
+.linkage-main p {
+  margin: 6px 0 0;
+  color: rgba(227, 239, 250, 0.62);
+}
+
+.linkage-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.linkage-meta span {
+  font-size: 12px;
+  color: #9ec1dc;
+}
+
+.linkage-action {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.linkage-action.high {
+  background: rgba(255, 109, 109, 0.16);
+  color: #ff6d6d;
+}
+
+.linkage-action.medium {
+  background: rgba(255, 200, 87, 0.16);
+  color: #ffc857;
+}
+
+.linkage-action.low {
+  background: rgba(47, 224, 165, 0.16);
+  color: #2fe0a5;
+}
+
+.priority-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.priority-tag.high {
+  background: rgba(255, 109, 109, 0.16);
+  color: #ff6d6d;
+}
+
+.priority-tag.medium {
+  background: rgba(255, 200, 87, 0.16);
+  color: #ffc857;
+}
+
+.priority-tag.low {
+  background: rgba(47, 224, 165, 0.16);
+  color: #2fe0a5;
+}
+
 .alert-item {
   display: flex;
   justify-content: space-between;
@@ -375,6 +582,7 @@ const ledgerRows = [
 
 @media (max-width: 1200px) {
   .kpi-grid,
+  .prediction-grid,
   .content-grid,
   .device-cards {
     grid-template-columns: 1fr;

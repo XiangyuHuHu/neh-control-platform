@@ -12,6 +12,7 @@ public class AssetCategory {
     private Long id;
 
     private String name;
+    @Column(name = "code", unique = true)
     private String code;
     private String description;
     private Long parentId;

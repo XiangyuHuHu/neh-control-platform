@@ -60,4 +60,9 @@ public class DashboardController {
     ) {
         return dashboardService.getTrendData(type, timeRange);
     }
+
+    @GetMapping("/portal-metrics")
+    public Map<String, Object> getPortalMetrics() {
+        return dashboardService.getPortalMetrics();
+    }
 }

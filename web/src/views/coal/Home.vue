@@ -3,14 +3,20 @@
     <header class="hero-shell">
       <div class="hero-copy">
         <p class="eyebrow">平台总入口</p>
-        <h1>智能化选煤厂管控平台</h1>
-        <p class="hero-summary">
-          统一进入综合看板、生产计划、调度管理、煤质管理、设备管理、生产消耗、销售统计、排班管理和平台数据能力页面。
-          当前版本按最新需求清单优先补齐功能结构、字段口径、页面入口和接口骨架。
-        </p>
-        <div class="hero-actions">
-          <router-link class="primary-link" to="/coal/dashboard">进入综合看板</router-link>
-          <router-link class="secondary-link" to="/coal/planning">查看生产计划</router-link>
+        <h1>淖尔壕智能化选煤厂</h1>
+        <p class="hero-summary">核心指标采用“接口优先 + 兜底数据”模式，便于现场前后平滑切换。</p>
+        <div class="metric-row">
+          <article v-for="item in displayMetrics" :key="item.label" class="metric-card" :class="`metric-card--${item.tone}`">
+            <span class="metric-label">{{ item.label }}</span>
+            <div class="metric-mainline">
+              <strong class="metric-value">{{ item.main }}</strong>
+              <span class="metric-unit">{{ item.unit }}</span>
+            </div>
+            <svg class="metric-sparkline" viewBox="0 0 120 28" preserveAspectRatio="none" aria-hidden="true">
+              <polyline :points="item.sparkline" />
+            </svg>
+            <small class="metric-note">{{ item.note }}</small>
+          </article>
         </div>
       </div>
 
@@ -101,8 +107,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { coalExtensionEntriesForHome, coalPlatformEntries, coalPrimaryEntries, coalTopicEntries } from './coalNav'
+import { getPortalMetrics, type PortalMetricItem } from '../../api/dashboard'
 
 const currentTime = ref('')
 const currentDate = ref('')
@@ -112,6 +119,59 @@ const runtimeStatus = ref([
   { label: '质量达标率', value: '96.8%' },
   { label: '能耗偏差', value: '-1.9%' },
 ])
+
+const fallbackCoreMetrics: PortalMetricItem[] = [
+  { label: '今日入洗量', value: '5,200 t', note: '较昨日 +4.2%' },
+  { label: '精煤产量', value: '3,400 t', note: '达成率 97.1%' },
+  { label: '实时总功率', value: '850 kW', note: '峰段负荷可控' },
+  { label: '全厂设备综合效率（OEE）', value: '92.4 %', note: '综合设备可用率与工况折算' },
+]
+const coreMetrics = ref<PortalMetricItem[]>(fallbackCoreMetrics)
+
+type MetricTone = 'cyan' | 'green' | 'warn'
+
+const resolveMetricTone = (label: string): MetricTone => {
+  if (label.includes('功率') || label.includes('能耗')) {
+    return 'green'
+  }
+  if (label.includes('风险') || label.includes('异常') || label.includes('告警')) {
+    return 'warn'
+  }
+  return 'cyan'
+}
+
+const splitMetricValue = (value: string) => {
+  const matched = value.match(/^\s*([+-]?\d[\d,.]*)\s*(.*)$/)
+  if (!matched) {
+    return { main: value, unit: '' }
+  }
+  return { main: matched[1], unit: matched[2] || '' }
+}
+
+const buildSparkline = (seedText: string) => {
+  const total = Array.from(seedText).reduce((acc, ch) => acc + ch.charCodeAt(0), 0)
+  const points: string[] = []
+  for (let i = 0; i < 12; i += 1) {
+    const x = (120 / 11) * i
+    const wave = Math.sin((total + i * 13) * 0.12) * 6 + Math.cos((total + i * 7) * 0.08) * 2
+    const y = Math.max(3, Math.min(25, 14 - wave))
+    points.push(`${x.toFixed(1)},${y.toFixed(1)}`)
+  }
+  return points.join(' ')
+}
+
+const displayMetrics = computed(() =>
+  coreMetrics.value.map((item) => {
+    const parsed = splitMetricValue(item.value)
+    return {
+      ...item,
+      main: parsed.main,
+      unit: parsed.unit,
+      tone: resolveMetricTone(item.label),
+      sparkline: buildSparkline(`${item.label}|${item.value}`),
+    }
+  }),
+)
 
 const primaryEntries = coalPrimaryEntries.map((item) => ({ path: item.path, title: item.label, desc: item.desc || '' }))
 const topicEntries = coalTopicEntries.map((item) => ({ path: item.path, title: item.label, desc: item.desc || '' }))
@@ -129,11 +189,21 @@ const updateTime = () => {
   })
 }
 
+const loadPortalMetrics = async () => {
+  try {
+    const data = await getPortalMetrics()
+    coreMetrics.value = data.metrics?.length ? data.metrics : fallbackCoreMetrics
+  } catch {
+    coreMetrics.value = fallbackCoreMetrics
+  }
+}
+
 let timer = 0
 
 onMounted(() => {
   updateTime()
   timer = window.setInterval(updateTime, 1000)
+  loadPortalMetrics()
 })
 
 onUnmounted(() => {
@@ -179,6 +249,91 @@ onUnmounted(() => {
 .hero-copy h1 {
   margin: 0;
   font-size: 38px;
+}
+
+.hero-summary {
+  max-width: 760px;
+  margin: 12px 0 0;
+  color: rgba(227, 239, 250, 0.72);
+  line-height: 1.8;
+}
+
+.metric-row {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 12px;
+  max-width: 820px;
+}
+
+.metric-card {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(125, 203, 255, 0.22);
+  border-left: 3px solid var(--metric-accent, #5ec8ff);
+  background: linear-gradient(145deg, rgba(18, 39, 57, 0.9), rgba(13, 27, 42, 0.92));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.metric-card--cyan {
+  --metric-accent: #48c9ff;
+}
+
+.metric-card--green {
+  --metric-accent: #5af2b7;
+}
+
+.metric-card--warn {
+  --metric-accent: #ffd666;
+}
+
+.metric-label {
+  display: block;
+  color: #9cc7eb;
+  font-size: 12px;
+}
+
+.metric-mainline {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.metric-value {
+  display: inline-block;
+  font-size: 28px;
+  line-height: 1.1;
+  color: var(--metric-accent, #e6f8ff);
+  text-shadow: 0 0 12px rgba(65, 196, 255, 0.2);
+}
+
+.metric-unit {
+  font-size: 13px;
+  color: rgba(230, 248, 255, 0.6);
+}
+
+.metric-sparkline {
+  display: block;
+  width: 100%;
+  height: 28px;
+  margin-top: 6px;
+  opacity: 0.95;
+}
+
+.metric-sparkline polyline {
+  fill: none;
+  stroke: var(--metric-accent, #4fcfff);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.metric-note {
+  display: block;
+  margin-top: 6px;
+  color: #78abd7;
+  font-size: 12px;
 }
 
 .hero-summary {
@@ -349,6 +504,11 @@ onUnmounted(() => {
   .extension-grid {
     grid-template-columns: 1fr 1fr;
   }
+
+  .metric-row {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+    max-width: 560px;
+  }
 }
 
 @media (max-width: 900px) {
@@ -362,6 +522,11 @@ onUnmounted(() => {
   .section-head {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .metric-row {
+    grid-template-columns: 1fr;
+    max-width: 340px;
   }
 }
 </style>

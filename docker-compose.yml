@@ -1,9 +1,9 @@
-name: coal-platform
+name: ${COMPOSE_PROJECT_NAME:-coal-platform-neh}
 
 services:
   postgres:
     image: postgres:16
-    container_name: coal-platform-postgres
+    container_name: ${COMPOSE_PROJECT_NAME:-coal-platform-neh}-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-coal_platform}
@@ -24,7 +24,7 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: coal-platform-server
+    container_name: ${COMPOSE_PROJECT_NAME:-coal-platform-neh}-server
     restart: unless-stopped
     depends_on:
       postgres:
@@ -37,11 +37,12 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-coal_user}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-coal_password}
       SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-validate}
       SPRING_JPA_SHOW_SQL: "false"
       SPRING_H2_CONSOLE_ENABLED: "false"
       SPRING_SECURITY_USER_NAME: ${SPRING_SECURITY_USER_NAME:-admin}
-      SPRING_SECURITY_USER_PASSWORD: ${SPRING_SECURITY_USER_PASSWORD:-admin}
+      SPRING_SECURITY_USER_PASSWORD: ${SPRING_SECURITY_USER_PASSWORD:-admin123}
+      PLATFORM_SECURITY_SECURE_API: ${PLATFORM_SECURITY_SECURE_API:-false}
       PLATFORM_IOT_PROVIDER: ${PLATFORM_IOT_PROVIDER:-mock}
       PLATFORM_IOT_FALLBACK_TO_MOCK: ${PLATFORM_IOT_FALLBACK_TO_MOCK:-true}
       PLATFORM_IOT_KEPSERVER_ENABLED: ${PLATFORM_IOT_KEPSERVER_ENABLED:-false}
@@ -52,6 +53,13 @@ services:
       PLATFORM_IOT_KEPSERVER_CHANNEL_PREFIX: ${PLATFORM_IOT_KEPSERVER_CHANNEL_PREFIX:-Channel1}
       PLATFORM_IOT_KEPSERVER_OPCUA_NAMESPACE_INDEX: ${PLATFORM_IOT_KEPSERVER_OPCUA_NAMESPACE_INDEX:-2}
       PLATFORM_IOT_KEPSERVER_TIMEOUT_MS: ${PLATFORM_IOT_KEPSERVER_TIMEOUT_MS:-3000}
+      SMART_DENSITY_ENABLED: ${SMART_DENSITY_ENABLED:-false}
+      SMART_DENSITY_BASE_URL: ${SMART_DENSITY_BASE_URL:-http://host.docker.internal:6789}
+      SMART_DENSITY_TIMEOUT_MS: ${SMART_DENSITY_TIMEOUT_MS:-3000}
+      SMART_REAGENT_ENABLED: ${SMART_REAGENT_ENABLED:-false}
+      SMART_REAGENT_BASE_URL: ${SMART_REAGENT_BASE_URL:-http://host.docker.internal:6788}
+      SMART_REAGENT_TIMEOUT_MS: ${SMART_REAGENT_TIMEOUT_MS:-3000}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-}
     ports:
       - "${SERVER_PORT:-8080}:8080"
 
@@ -59,12 +67,91 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile
-    container_name: coal-platform-web
+    container_name: ${COMPOSE_PROJECT_NAME:-coal-platform-neh}-web
     restart: unless-stopped
     depends_on:
       - server
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
     ports:
       - "${WEB_PORT:-80}:80"
 
+  smart-density-mysql:
+    profiles: ["models"]
+    image: mysql:8.4
+    container_name: ${COMPOSE_PROJECT_NAME:-coal-platform-neh}-smart-density-mysql
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      MYSQL_ROOT_PASSWORD: ${SMART_DENSITY_DB_ROOT_PASSWORD:-root_change_me}
+      MYSQL_DATABASE: ${SMART_DENSITY_DB_NAME:-ai_data}
+      MYSQL_USER: ${SMART_DENSITY_DB_USER:-smart_density}
+      MYSQL_PASSWORD: ${SMART_DENSITY_DB_PASSWORD:-smart_density_change_me}
+    ports:
+      - "${SMART_DENSITY_DB_PORT_EXPOSE:-3306}:3306"
+    volumes:
+      - smart-density-mysql-data:/var/lib/mysql
+      - ./deploy/mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u${SMART_DENSITY_DB_USER:-smart_density} -p${SMART_DENSITY_DB_PASSWORD:-smart_density_change_me} --silent"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+
+  smart-density:
+    profiles: ["models"]
+    build:
+      context: ./python-services/smart-density
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-coal-platform-neh}-smart-density
+    restart: unless-stopped
+    depends_on:
+      smart-density-mysql:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      PYTHONIOENCODING: utf-8
+      PYTHONUTF8: "1"
+      MODEL_WRITEBACK_URL: ${MODEL_WRITEBACK_URL:-http://host.docker.internal:1880/Post_mikong}
+      SMART_DENSITY_RHO_SOURCE: ${SMART_DENSITY_RHO_SOURCE:-param}
+      SMART_DENSITY_DEFAULT_3207: ${SMART_DENSITY_DEFAULT_3207:-1.43}
+      SMART_DENSITY_DEFAULT_3208: ${SMART_DENSITY_DEFAULT_3208:-1.47}
+      SMART_DENSITY_DEFAULT_316: ${SMART_DENSITY_DEFAULT_316:-1.38}
+      SMART_DENSITY_DB_HOST: ${SMART_DENSITY_DB_HOST:-smart-density-mysql}
+      SMART_DENSITY_DB_PORT: ${SMART_DENSITY_DB_PORT:-3306}
+      SMART_DENSITY_DB_NAME: ${SMART_DENSITY_DB_NAME:-ai_data}
+      SMART_DENSITY_DB_TABLE: ${SMART_DENSITY_DB_TABLE:-opcdata}
+      SMART_DENSITY_DB_USER: ${SMART_DENSITY_DB_USER:-smart_density}
+      SMART_DENSITY_DB_PASSWORD: ${SMART_DENSITY_DB_PASSWORD:-smart_density_change_me}
+      SMART_DENSITY_DB_TIMEOUT_SEC: ${SMART_DENSITY_DB_TIMEOUT_SEC:-3}
+    ports:
+      - "${SMART_DENSITY_PORT:-6789}:6789"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:6789/openapi.json', timeout=3)\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  smart-reagent:
+    profiles: ["models"]
+    build:
+      context: ./python-services/smart-reagent
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-coal-platform-neh}-smart-reagent
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      PYTHONIOENCODING: utf-8
+      PYTHONUTF8: "1"
+      MODEL_WRITEBACK_URL: ${MODEL_WRITEBACK_URL:-http://host.docker.internal:1880/Post_mikong}
+    ports:
+      - "${SMART_REAGENT_PORT:-6788}:6788"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:6788/openapi.json', timeout=3)\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
 volumes:
   postgres-data:
+  smart-density-mysql-data:

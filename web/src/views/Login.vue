@@ -10,7 +10,7 @@
           <div class="logo">
             <el-icon size="48"><OfficeBuilding /></el-icon>
           </div>
-          <h1 class="system-name">选煤厂一体化管控平台</h1>
+          <h1 class="system-name">淖尔壕智能化选煤厂</h1>
           <p class="system-subtitle">Coal Preparation Plant Integrated Management Platform</p>
           <div class="system-features">
             <div class="feature-item">
@@ -80,7 +80,7 @@
           </div>
         </div>
         <div class="login-tips">
-          <p>默认账号：admin / admin123</p>
+          <p>默认账号：admin / admin123（全权限演示）；开启 API 认证后可使用 viewer / viewer123（只读）</p>
         </div>
       </div>
     </div>
@@ -91,6 +91,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { setApiBasicAuth } from '../api/http'
 import {
   CircleCheck,
   Cpu,
@@ -155,7 +156,10 @@ const handleLogin = async () => {
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      if (loginForm.username === 'admin' && loginForm.password === 'admin123') {
+      const okAdmin = loginForm.username === 'admin' && loginForm.password === 'admin123'
+      const okViewer = loginForm.username === 'viewer' && loginForm.password === 'viewer123'
+      if (okAdmin || okViewer) {
+        setApiBasicAuth(loginForm.username, loginForm.password)
         ElMessage.success('登录成功，欢迎回来')
         router.push('/coal/dashboard')
       } else {

@@ -282,6 +282,23 @@ const ledgerMode = ref('system')
 const ledgerKeyword = ref('')
 const selectedLedgerId = ref('100-pump')
 
+const syncDashboardCopy = () => {
+  const setText = (selector: string, text: string) => {
+    const el = document.querySelector(selector)
+    if (el) el.textContent = text
+  }
+
+  setText('.dashboard-screen .globe-core h2', '201入洗原煤')
+  const siloItems = Array.from(document.querySelectorAll('.dashboard-screen .silo-label'))
+  siloItems.forEach((item) => {
+    const strong = item.querySelector('strong')
+    const span = item.querySelector('span')
+    if (!strong || !span) return
+    const name = strong.textContent ?? ''
+    if (name.includes('原煤')) span.textContent = '总量 0吨'
+  })
+}
+
 const ledgers: LedgerItem[] = [
   {
     key: '100-pump',
@@ -507,6 +524,7 @@ const renderCharts = () => {
 
 onMounted(() => {
   syncScreenScale()
+  syncDashboardCopy()
   renderCharts()
   window.addEventListener('resize', syncScreenScale)
   window.addEventListener('resize', renderCharts)

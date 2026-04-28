@@ -1,0 +1,16 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+requests==2.32.3
+PyYAML==6.0.2
+numpy==1.26.4
+pandas==2.2.3
+scipy==1.14.1
+scikit-learn==1.5.2
+matplotlib==3.9.2
+pymysql==1.1.1
+cvxpy==1.5.3
+EMD-signal==1.6.0
+scikit-fuzzy==0.5.0
+tensorflow-cpu==2.15.1
+keras==2.15.0
