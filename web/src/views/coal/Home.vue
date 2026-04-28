@@ -131,6 +131,12 @@ const coreMetrics = ref<PortalMetricItem[]>(fallbackCoreMetrics)
 type MetricTone = 'cyan' | 'green' | 'warn' | 'violet' | 'amber'
 
 const resolveMetricTone = (label: string): MetricTone => {
+  if (label.includes('入洗量')) {
+    return 'cyan'
+  }
+  if (label.includes('产量')) {
+    return 'blue'
+  }
   if (label.includes('功率') || label.includes('能耗')) {
     return 'green'
   }
@@ -292,7 +298,11 @@ onUnmounted(() => {
   --metric-accent: #5af2b7;
 }
 
-.metric-card--warn {
+.metric-card--blue {
+  --metric-accent: #66b3ff;
+}
+
+.metric-card--gold {
   --metric-accent: #ffd666;
 }
 
