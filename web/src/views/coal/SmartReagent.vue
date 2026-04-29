@@ -100,6 +100,7 @@ import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import CoalQuickBar from '../../components/coal/CoalQuickBar.vue'
 import { echarts, INDUSTRIAL_CHART_COLORS } from '../../utils/echarts'
+import { parseJsonObject, parseNumberArray, toErrorMessage, type JsonRecord } from './smartModelPayload'
 import {
   getSmartReagentOverview,
   predictSmartReagent,
@@ -114,7 +115,7 @@ const reagentUnits = [
   { label: '5202 块煤二号', value: '5202' },
 ]
 
-const templates: Record<string, { dataLong: number[]; dataShort: number[]; params: Record<string, any> }> = {
+const templates: Record<string, { dataLong: number[]; dataShort: number[]; params: JsonRecord }> = {
   '601': {
     dataLong: [1.43, 0.42, 18.5, 42, 1, 2850, 11.8],
     dataShort: [1.43, 0.41, 18, 40, 0],
@@ -154,22 +155,6 @@ function applyTemplate() {
   paramsText.value = JSON.stringify(template.params, null, 2)
 }
 
-function parseArray(text: string, label: string) {
-  const parsed = JSON.parse(text)
-  if (!Array.isArray(parsed)) {
-    throw new Error(`${label} 必须是数组`)
-  }
-  return parsed.map(Number)
-}
-
-function parseObject(text: string) {
-  const parsed = JSON.parse(text)
-  if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
-    throw new Error('参数对象必须是 JSON 对象')
-  }
-  return parsed as Record<string, any>
-}
-
 async function loadOverview() {
   try {
     const data = await getSmartReagentOverview()
@@ -189,16 +174,16 @@ async function runPredict() {
     loading.value = true
     const payload = {
       unit: selectedUnit.value,
-      dataLong: parseArray(dataLongText.value, '长周期数据'),
-      dataShort: parseArray(dataShortText.value, '短周期数据'),
-      params: parseObject(paramsText.value),
+      dataLong: parseNumberArray(dataLongText.value, '长周期数据'),
+      dataShort: parseNumberArray(dataShortText.value, '短周期数据'),
+      params: parseJsonObject(paramsText.value),
     }
     result.value = await predictSmartReagent(payload)
     await nextTick()
     renderChart()
     ElMessage.success(`智能加药 ${selectedUnit.value} 调用完成`)
-  } catch (error: any) {
-    ElMessage.error(error?.message || '智能加药调用失败')
+  } catch (error: unknown) {
+    ElMessage.error(toErrorMessage(error, '智能加药调用失败'))
   } finally {
     loading.value = false
   }
@@ -206,8 +191,9 @@ async function runPredict() {
 
 function renderChart() {
   if (!chartEl.value || !result.value) return
-  chart?.dispose()
-  chart = echarts.init(chartEl.value)
+  if (!chart) {
+    chart = echarts.init(chartEl.value)
+  }
   chart.setOption({
     tooltip: { trigger: 'axis' },
     xAxis: {
@@ -231,7 +217,7 @@ function renderChart() {
         },
       },
     ],
-  })
+  }, true)
 }
 
 const handleResize = () => chart?.resize()
