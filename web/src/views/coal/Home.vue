@@ -135,7 +135,7 @@ const resolveMetricTone = (label: string): MetricTone => {
     return 'cyan'
   }
   if (label.includes('产量')) {
-    return 'blue'
+    return 'amber'
   }
   if (label.includes('功率') || label.includes('能耗')) {
     return 'green'

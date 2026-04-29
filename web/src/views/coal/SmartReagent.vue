@@ -300,7 +300,8 @@ function renderChart() {
           { offset: 1, color: 'rgba(0,242,241,0.02)' },
         ]),
       },
-    ],
+      data: [result.value.predPump, result.value.predBackupPump, result.value.valveMN],
+    }],
   }, true)
 }
 
