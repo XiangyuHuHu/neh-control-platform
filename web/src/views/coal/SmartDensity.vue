@@ -156,7 +156,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { echarts, INDUSTRIAL_CHART_COLORS } from '../../utils/echarts'
-import DensityPredictCard from '../../components/coal/DensityPredictCard.vue'
+import { parseJsonObject, parseNumberArray, toErrorMessage, type JsonRecord } from './smartModelPayload'
 import {
   getSmartDensityOverview,
   predictSmartDensity,
@@ -170,8 +170,6 @@ const densityUnits = [
   { label: '3208 主洗三段', value: '3208' },
   { label: '316 末煤系统', value: '316' },
 ]
-
-type JsonRecord = Record<string, unknown>
 
 const templates: Record<string, { dataLong: number[]; dataShort: number[]; params: JsonRecord }> = {
   '3207': {
@@ -268,28 +266,6 @@ function applyTemplate() {
   paramsText.value = JSON.stringify(template.params, null, 2)
 }
 
-function parseArray(text: string, label: string): number[] {
-  const parsed: unknown = JSON.parse(text)
-  if (!Array.isArray(parsed)) {
-    throw new Error(`${label} 必须是数组`)
-  }
-  return parsed.map((value, index) => {
-    const numericValue = Number(value)
-    if (!Number.isFinite(numericValue)) {
-      throw new Error(`${label} 第 ${index + 1} 项不是有效数字`)
-    }
-    return numericValue
-  })
-}
-
-function parseObject(text: string): JsonRecord {
-  const parsed: unknown = JSON.parse(text)
-  if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
-    throw new Error('参数对象必须是 JSON 对象')
-  }
-  return parsed as JsonRecord
-}
-
 async function loadOverview() {
   try {
     const data = await getSmartDensityOverview()
@@ -310,9 +286,9 @@ async function runPredict() {
     loading.value = true
     const payload = {
       unit: selectedUnit.value,
-      dataLong: parseArray(dataLongText.value, '长周期数据'),
-      dataShort: parseArray(dataShortText.value, '短周期数据'),
-      params: parseObject(paramsText.value),
+      dataLong: parseNumberArray(dataLongText.value, '长周期数据'),
+      dataShort: parseNumberArray(dataShortText.value, '短周期数据'),
+      params: parseJsonObject(paramsText.value),
     }
     const [predictResult, setpointResult] = await Promise.all([
       predictSmartDensity(payload),
@@ -323,8 +299,8 @@ async function runPredict() {
     await nextTick()
     renderChart()
     ElMessage.success(`智能密控 ${selectedUnit.value} 调用完成`)
-  } catch (error: any) {
-    ElMessage.error(error?.message || '智能密控调用失败')
+  } catch (error: unknown) {
+    ElMessage.error(toErrorMessage(error, '智能密控调用失败'))
   } finally {
     loading.value = false
   }

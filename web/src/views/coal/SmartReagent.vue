@@ -166,6 +166,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { echarts, INDUSTRIAL_CHART_COLORS } from '../../utils/echarts'
+import { parseJsonObject, parseNumberArray, toErrorMessage, type JsonRecord } from './smartModelPayload'
 import {
   getSmartReagentOverview,
   predictSmartReagent,
@@ -179,8 +180,6 @@ const reagentUnits = [
   { label: '5201 块煤一号', value: '5201' },
   { label: '5202 块煤二号', value: '5202' },
 ]
-
-type JsonRecord = Record<string, unknown>
 
 const templates: Record<string, { dataLong: number[]; dataShort: number[]; params: JsonRecord }> = {
   '601': {
@@ -238,38 +237,6 @@ function applyTemplate() {
   paramsText.value = JSON.stringify(template.params, null, 2)
 }
 
-function parseArray(text: string, label: string): number[] {
-  const parsed: unknown = JSON.parse(text)
-  if (!Array.isArray(parsed)) {
-    throw new Error(`${label} 必须是数组`)
-  }
-  return parsed.map((value, index) => {
-    const numericValue = Number(value)
-    if (!Number.isFinite(numericValue)) {
-      throw new Error(`${label} 第 ${index + 1} 项不是有效数字`)
-    }
-    return numericValue
-  })
-}
-
-function parseObject(text: string): JsonRecord {
-  const parsed: unknown = JSON.parse(text)
-  if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
-    throw new Error('参数对象必须是 JSON 对象')
-  }
-  return parsed as JsonRecord
-}
-
-function controlAction(action: 'start' | 'auto' | 'reset', unit: string) {
-  activeCommand.value[unit] = action
-  const actionText = action === 'start' ? '启动' : action === 'auto' ? '自动' : '复位'
-  ElMessage.success(`设备 ${unit} 已执行${actionText}指令（演示）`)
-}
-
-function updateTime() {
-  currentTime.value = new Date().toLocaleString('zh-CN', { hour12: false })
-}
-
 async function loadOverview() {
   try {
     const data = await getSmartReagentOverview()
@@ -289,16 +256,16 @@ async function runPredict() {
     loading.value = true
     const payload = {
       unit: selectedUnit.value,
-      dataLong: parseArray(dataLongText.value, '长周期数据'),
-      dataShort: parseArray(dataShortText.value, '短周期数据'),
-      params: parseObject(paramsText.value),
+      dataLong: parseNumberArray(dataLongText.value, '长周期数据'),
+      dataShort: parseNumberArray(dataShortText.value, '短周期数据'),
+      params: parseJsonObject(paramsText.value),
     }
     result.value = await predictSmartReagent(payload)
     await nextTick()
     renderChart()
     ElMessage.success(`智能加药 ${selectedUnit.value} 调用完成`)
-  } catch (error: any) {
-    ElMessage.error(error?.message || '智能加药调用失败')
+  } catch (error: unknown) {
+    ElMessage.error(toErrorMessage(error, '智能加药调用失败'))
   } finally {
     loading.value = false
   }
