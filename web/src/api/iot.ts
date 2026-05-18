@@ -95,6 +95,20 @@ export interface IotTagUpsertPayload {
   remark?: string
 }
 
+export interface IotProviderStatus {
+  configuredProvider: string
+  actualProvider: string
+  fallbackToMock: boolean
+  preferredProviderAvailable: boolean
+  kepserver?: {
+    enabled: boolean
+    endpoint: string
+    sourceType: string
+    channelPrefix: string
+    timeoutMs: number
+  }
+}
+
 const buildQuery = (params: Record<string, string | number | boolean | undefined | null>) => {
   const query = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
@@ -211,6 +225,8 @@ export const closeIotAlarm = (payload: { alarmId: string; operator?: string; rem
   })
 
 export const getIotTagMappings = () => request<IotTagMapping[]>('/tag-mappings')
+
+export const getIotProviderStatus = () => request<IotProviderStatus>('/provider/status')
 
 export const createIotTagMapping = (payload: IotTagMappingUpsertPayload) =>
   request<IotTagMapping>('/tag-mappings', {

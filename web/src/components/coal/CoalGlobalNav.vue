@@ -121,21 +121,21 @@ const navWrapRef = ref<HTMLElement | null>(null)
 const openTopMenuPath = ref<string | null>(null)
 
 const navIcons: Record<string, string> = {
-  '/coal': '⌂',
-  '/coal/dashboard': '▣',
-  '/coal/production': '▤',
-  '/coal/equipment': '◇',
-  '/coal/quality': '◎',
-  '/coal/storage': '▥',
-  '/coal/energy': '↯',
-  '/coal/spare-parts': '▧',
-  '/coal/collaboration': '⇄',
-  '/coal/dispatch': '⌁',
-  '/coal/power-operation': '⎓',
-  '/coal/decision': '✦',
-  '/coal/monitor': '◌',
-  '/coal/settings': '⚙',
-  '/coal/report': '▨',
+  '/coal': '首',
+  '/coal/dashboard': '看',
+  '/coal/production': '产',
+  '/coal/equipment': '设',
+  '/coal/quality': '质',
+  '/coal/storage': '储',
+  '/coal/energy': '能',
+  '/coal/spare-parts': '备',
+  '/coal/collaboration': '协',
+  '/coal/dispatch': '调',
+  '/coal/power-operation': '电',
+  '/coal/decision': '智',
+  '/coal/monitor': '巡',
+  '/coal/settings': '设',
+  '/coal/report': '报',
 }
 
 function iconFor(path: string) {

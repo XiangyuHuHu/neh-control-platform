@@ -111,6 +111,32 @@
       </DensityPredictCard>
     </section>
 
+    <section class="effect-panel">
+      <div class="panel-head">
+        <h2>建议采纳与效果回溯</h2>
+        <div class="panel-actions">
+          <el-button :disabled="!result" type="primary" @click="acceptSuggestion">采纳当前建议</el-button>
+          <el-button @click="clearEffectHistory">清空记录</el-button>
+        </div>
+      </div>
+      <div class="effect-kpis">
+        <article v-for="item in effectKpis" :key="item.label">
+          <span>{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
+          <small>{{ item.note }}</small>
+        </article>
+      </div>
+      <el-table :data="effectHistory" class="effect-table" max-height="260">
+        <el-table-column prop="time" label="时间" min-width="160" />
+        <el-table-column prop="unit" label="单元" width="90" />
+        <el-table-column prop="suggestion" label="模型建议" min-width="220" />
+        <el-table-column prop="before" label="执行前" min-width="140" />
+        <el-table-column prop="after" label="执行后预估" min-width="140" />
+        <el-table-column prop="saving" label="收益口径" min-width="160" />
+        <el-table-column prop="mode" label="模型来源" width="120" />
+      </el-table>
+    </section>
+
     <el-drawer v-model="alarmDrawer" title="实时告警抽屉" size="360px">
       <div class="alarm-list">
         <div v-for="a in alarms" :key="a.id" class="alarm-item">
@@ -214,6 +240,20 @@ const alarms = ref([
 ])
 const activeCommand = ref<Record<string, 'start' | 'auto' | 'reset'>>({})
 
+type DensityEffectRecord = {
+  id: string
+  time: string
+  unit: string
+  suggestion: string
+  before: string
+  after: string
+  saving: string
+  mode: string
+}
+
+const effectHistory = ref<DensityEffectRecord[]>([])
+const effectStorageKey = 'coal_smart_density_effect_history'
+
 const setpointText = computed(() => {
   if (!setpoint.value) return '--'
   return `${setpoint.value.predMiddlingDensity} / ${setpoint.value.predCleanDensity}`
@@ -243,6 +283,19 @@ const flowBase = computed(() => {
 const flowDurationBlue = computed(() => flowBase.value.toFixed(2))
 const flowDurationGold = computed(() => (flowBase.value + 0.5).toFixed(2))
 const flowDurationGreen = computed(() => (flowBase.value + 0.9).toFixed(2))
+const effectKpis = computed(() => {
+  const accepted = effectHistory.value.length
+  const modelCount = effectHistory.value.filter((item) => item.mode === '模型服务').length
+  const avgStability = accepted
+    ? Math.round(effectHistory.value.reduce((sum, item) => sum + Number(item.after.match(/\d+(\.\d+)?/)?.[0] || 0), 0) / accepted)
+    : 0
+  return [
+    { label: '采纳次数', value: `${accepted} 次`, note: '本机回溯记录' },
+    { label: '模型服务占比', value: `${accepted ? Math.round((modelCount / accepted) * 100) : 0}%`, note: '区分演示回退' },
+    { label: '平均稳定提升', value: `${avgStability}%`, note: '按建议执行预估' },
+    { label: '介耗优化', value: accepted ? '约 5~8%' : '--', note: '需接现场实测校准' },
+  ]
+})
 
 function toNumber(value: string) {
   const n = Number(String(value).replace(/[^\d.-]/g, ''))
@@ -306,6 +359,47 @@ async function runPredict() {
   }
 }
 
+function acceptSuggestion() {
+  if (!result.value) {
+    ElMessage.warning('请先调用模型生成建议')
+    return
+  }
+  const beforeDensity = toNumber(overviewRows.value.find((item) => item.unit === selectedUnit.value)?.density || String(result.value.predDensity))
+  const predictedDensity = Number(result.value.predDensity || beforeDensity)
+  const stabilityGain = Math.max(6, Math.min(28, Math.round(Math.abs(predictedDensity - beforeDensity) * 260 + 12)))
+  const record: DensityEffectRecord = {
+    id: `${Date.now()}`,
+    time: new Date().toLocaleString('zh-CN', { hour12: false }),
+    unit: selectedUnit.value,
+    suggestion: `分流阀 ${result.value.predDiverter} / 补水阀 ${result.value.predWater} / 密度 ${result.value.predDensity}`,
+    before: `密度 ${beforeDensity || '--'}`,
+    after: `稳定提升 ${stabilityGain}%`,
+    saving: '介耗预计下降 5~8%',
+    mode: result.value.mode,
+  }
+  effectHistory.value = [record, ...effectHistory.value].slice(0, 20)
+  saveEffectHistory()
+  ElMessage.success('已记录本次密控建议采纳效果')
+}
+
+function saveEffectHistory() {
+  localStorage.setItem(effectStorageKey, JSON.stringify(effectHistory.value))
+}
+
+function loadEffectHistory() {
+  try {
+    const raw = localStorage.getItem(effectStorageKey)
+    effectHistory.value = raw ? JSON.parse(raw) : []
+  } catch {
+    effectHistory.value = []
+  }
+}
+
+function clearEffectHistory() {
+  effectHistory.value = []
+  saveEffectHistory()
+}
+
 function renderChart() {
   if (!chartEl.value || !result.value) return
   if (!chart) {
@@ -341,6 +435,7 @@ const handleResize = () => chart?.resize()
 
 onMounted(async () => {
   updateTime()
+  loadEffectHistory()
   timer = window.setInterval(updateTime, 1000)
   applyTemplate()
   await loadOverview()
@@ -481,6 +576,49 @@ onUnmounted(() => {
   gap: 12px;
   margin-bottom: 12px;
 }
+.effect-panel {
+  margin-bottom: 12px;
+  padding: 14px;
+  border: 1px solid rgba(154, 188, 224, 0.22);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(7px);
+}
+.effect-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.effect-kpis article {
+  padding: 12px;
+  border: 1px solid rgba(126, 185, 239, 0.22);
+  border-radius: 10px;
+  background: rgba(7, 18, 31, 0.5);
+}
+.effect-kpis span,
+.effect-kpis small {
+  display: block;
+  color: #9fc7ea;
+  font-size: 12px;
+}
+.effect-kpis strong {
+  display: block;
+  margin: 8px 0;
+  color: #58efbe;
+  font-size: 24px;
+}
+.effect-table :deep(.el-table),
+.effect-table :deep(.el-table__inner-wrapper),
+.effect-table :deep(.el-table tr),
+.effect-table :deep(.el-table th.el-table__cell),
+.effect-table :deep(.el-table td.el-table__cell) {
+  background: transparent;
+  color: #eaf6ff;
+}
+.effect-table :deep(.el-table__header th.el-table__cell) {
+  color: #8ec5ec;
+}
 .outline-btn {
   border: 1px solid rgba(126, 185, 239, 0.55);
   background: transparent;
@@ -521,6 +659,6 @@ onUnmounted(() => {
 .alarm-item small { color: #e8b8b8; }
 @media (max-width: 1300px) {
   .flow-shell { grid-template-columns: 1fr; }
-  .unit-grid, .form-grid { grid-template-columns: 1fr; }
+  .unit-grid, .form-grid, .effect-kpis { grid-template-columns: 1fr; }
 }
 </style>

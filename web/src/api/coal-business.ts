@@ -360,6 +360,27 @@ export interface PowerActionPayload {
   approved?: boolean
 }
 
+export interface WorkOrderDto {
+  id?: number
+  orderNo: string
+  title: string
+  description?: string
+  type: string
+  priority: string
+  status: string
+  deviceId?: number
+  assigneeId?: number
+  creatorId?: number
+  plannedStartTime?: string
+  plannedEndTime?: string
+  actualStartTime?: string
+  actualEndTime?: string
+  result?: string
+  remarks?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
 export interface EquipmentPredictiveItemDto {
   device: string
   healthScore: number
@@ -686,6 +707,31 @@ export const predictSmartReagent = (payload: SmartReagentPredictRequest) =>
 
 export const listPowerOperations = (params: { status?: string; powerRoom?: string } = {}) =>
   request<PowerOperationDto[]>(`/api/power-operation/list${buildQuery(params)}`)
+
+export const listWorkOrders = (params: {
+  orderNo?: string
+  title?: string
+  type?: string
+  status?: string
+  deviceId?: number
+  assigneeId?: number
+} = {}) => request<WorkOrderDto[]>(`/api/work-order/list${buildQuery(params)}`)
+
+export const createWorkOrder = (payload: WorkOrderDto) =>
+  request<WorkOrderDto>('/api/work-order', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const startWorkOrder = (id: number) =>
+  request<WorkOrderDto>(`/api/work-order/start/${id}`, {
+    method: 'POST',
+  })
+
+export const completeWorkOrder = (id: number, result: string) =>
+  request<WorkOrderDto>(`/api/work-order/complete/${id}${buildQuery({ result })}`, {
+    method: 'POST',
+  })
 
 export const applyPowerOperation = (payload: PowerApplyPayload) =>
   request<PowerOperationDto>('/api/power-operation/apply', {

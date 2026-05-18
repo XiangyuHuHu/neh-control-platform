@@ -1368,6 +1368,7 @@ body.coal-theme :is(h1, h2, h3, .page-title, .panel-title) {
 }
 
 body.coal-theme {
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', 'Source Han Sans SC', 'Inter', sans-serif;
   background:
     radial-gradient(circle at 18% 18%, rgba(105, 218, 255, 0.14), transparent 24%),
     radial-gradient(circle at 82% 10%, rgba(0, 253, 193, 0.1), transparent 22%),
@@ -1431,7 +1432,7 @@ body.coal-theme .coal-page .header-section {
 }
 
 body.coal-theme .coal-page .header-center::before {
-  content: "鏅鸿兘璋冨害涓灑";
+  content: "智能调度中枢";
   background: rgba(28, 39, 50, 0.86);
   border-color: rgba(105, 218, 255, 0.18);
   color: #8fdfff;

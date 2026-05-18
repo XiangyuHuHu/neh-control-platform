@@ -147,7 +147,7 @@ const resolveMetricTone = (label: string): MetricTone => {
     return 'amber'
   }
   if (label.includes('设备') || label.includes('OEE')) {
-    return 'cyan'
+    return 'violet'
   }
   if (label.includes('风险') || label.includes('异常') || label.includes('告警')) {
     return 'warn'
